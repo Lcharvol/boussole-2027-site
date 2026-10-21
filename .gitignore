@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.donnees/
+src/generated/
+public/donnees/
+public/og/
+.lighthouseci/
+.concordance/
+__pycache__/
+.DS_Store
