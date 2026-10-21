@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import Resultat from './Resultat';
+import { lien, listeQuestions, photos, questions, themes } from '../lib/donnees';
+
+interface Props { mode?: 'rapide' | 'moyen' | 'long' }
+const { mode } = Astro.props;
+const nb = { rapide: 8, moyen: 24, long: 40 };
+---
+
+<Base
+  titre={mode ? `Mon résultat (mode ${mode})` : 'Mon résultat'}
+  description={mode ? `Mon résultat à la Boussole présidentielle 2027, mode ${mode} (${nb[mode]} questions) : proximité avec les programmes, sources à l'appui. Faites le test vous aussi.` : "Résultat de la Boussole présidentielle 2027 : proximité avec les programmes, sources à l'appui."}
+  image={mode ? `og/resultat-${mode}.png` : 'og/generique.png'}
+  noindex
+  large
+>
+  <h1 class="text-4xl font-bold">Votre résultat</h1>
+  <div class="mt-6">
+    <Resultat client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} photos={photos} />
+  </div>
+  <noscript><p class="brut-surface mt-6 bg-card p-4">Le résultat est calculé dans votre navigateur et nécessite JavaScript.</p></noscript>
+</Base>

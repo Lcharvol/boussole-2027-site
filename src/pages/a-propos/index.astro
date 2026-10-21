@@ -1,0 +1,37 @@
+---
+import Base from '../../layouts/Base.astro';
+import { lien, meta } from '../../lib/donnees';
+---
+
+<Base titre="À propos et contribuer" description="Qui fait la Boussole présidentielle 2027, ses principes de neutralité, et comment signaler une erreur ou contribuer.">
+  <article class="prose-b">
+    <h1 class="text-4xl font-bold">À propos</h1>
+    <p>La Boussole présidentielle 2027 est un projet indépendant et bénévole, publié sous licence libre. Elle est née comme un <a href={lien('skill-claude/')}>skill pour Claude</a> ; ce site en reprend les données et le calcul pour les rendre accessibles à tous, sans compte ni installation.</p>
+    <p>Elle n'est liée à aucun candidat, parti, média ou institut de sondage, et ne reçoit aucun financement.</p>
+
+    <h2>Principes</h2>
+    <ul>
+      <li><strong>Sourcer chaque position.</strong> Une citation exacte, un lien, une date, un niveau de confiance ; sans source, la position reste inconnue.</li>
+      <li><strong>Traiter tous les candidats de la même façon.</strong> Mêmes gabarits, même taille de photo, ordre alphabétique partout, sauf dans votre propre résultat.</li>
+      <li><strong>Mesurer la neutralité.</strong> L'audit publié sur la page <a href={lien('methode/')}>Méthode</a> est recalculé à chaque mise à jour.</li>
+      <li><strong>Ne rien collecter.</strong> Pas de cookie, pas de traceur, pas de mesure d'audience, pas de statistique sur les réponses.</li>
+      <li><strong>Ne pas faire de sondage.</strong> Le site ne publie aucun sondage ni aucun agrégat des résultats de ses visiteurs : un tel chiffre ne serait pas représentatif et pourrait être pris pour un sondage, ce que la loi encadre strictement en période électorale.</li>
+    </ul>
+
+    <h2 id="contribuer">Contribuer</h2>
+    <p>Une position est fausse, une citation mal recopiée, un programme vient de sortir, un candidat se déclare ou se retire ?</p>
+    <ul>
+      <li>Ouvrez une <a href={`${meta.depot}/issues/new`}>issue sur le dépôt du skill</a> en citant la source (une URL précise, de préférence le programme ou une déclaration récente). Les autres boussoles et les agrégateurs ne comptent pas comme source.</li>
+      <li>Ou proposez directement une modification (pull request) des fiches : la procédure et les règles de codage sont dans <a href={`${meta.depot}/blob/main/skills/boussole-presidentielle-2027/references/mise-a-jour.md`}>references/mise-a-jour.md</a>. Toute modification de valeur, de source ou de citation repasse en « non relu » jusqu'à vérification humaine.</li>
+      <li>Pour le site lui-même (affichage, accessibilité, bug) : <a href="https://github.com/Lcharvol/boussole-2027-site/issues/new">issue sur le dépôt du site</a>.</li>
+    </ul>
+    <p>Le site se reconstruit automatiquement quand les données du skill changent.</p>
+
+    <h2>Crédits</h2>
+    <ul>
+      <li>Photos : Wikimedia Commons, sous licences libres ; auteur et licence sur chaque fiche candidat.</li>
+      <li>Composants d'interface : <a href="https://www.brut-ui.site/">Brut/UI</a> (MIT), sur Base UI et Tailwind CSS.</li>
+      <li>Polices : Inter et Source Serif 4 (SIL Open Font License), hébergées avec le site.</li>
+    </ul>
+  </article>
+</Base>

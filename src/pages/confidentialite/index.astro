@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base titre="Confidentialité" description="La Boussole présidentielle 2027 ne collecte aucune donnée : pas de cookie, pas de traceur, calcul dans le navigateur.">
+  <article class="prose-b">
+    <h1 class="text-4xl font-bold">Confidentialité</h1>
+    <p><strong>En bref : le site ne collecte rien.</strong> Vos réponses sont des opinions politiques, c'est-à-dire des données sensibles ; elles ne quittent jamais votre appareil.</p>
+
+    <h2>Vos réponses</h2>
+    <ul>
+      <li>Le questionnaire et le calcul fonctionnent entièrement dans votre navigateur. Aucune réponse n'est envoyée à un serveur.</li>
+      <li>À la fin du test, vos réponses sont encodées dans l'adresse de la page de résultat, après le signe « # ». Cette partie de l'adresse n'est jamais transmise au serveur par le navigateur : l'hébergeur ne la voit pas.</li>
+      <li>Si vous partagez ce lien, la personne qui l'ouvre verra vos réponses. Ne le partagez qu'en connaissance de cause.</li>
+      <li>Rien n'est enregistré dans votre navigateur : en fermant la page, le résultat disparaît (sauf si vous gardez le lien).</li>
+    </ul>
+
+    <h2>Ce que le site n'utilise pas</h2>
+    <ul>
+      <li>Aucun cookie.</li>
+      <li>Aucune mesure d'audience, aucun traceur, aucun bouton de réseau social, aucune publicité.</li>
+      <li>Aucune ressource chargée depuis un autre site : polices, scripts, photos et données sont servis par le site lui-même. Les liens vers les sources des citations ne sont suivis que si vous cliquez dessus.</li>
+      <li>Aucun compte, aucun formulaire, aucune adresse e-mail demandée.</li>
+    </ul>
+
+    <h2>Le seul réglage mémorisé</h2>
+    <p>Si vous choisissez le thème clair ou sombre avec le bouton prévu, ce choix est gardé dans le stockage local de votre navigateur (<code>localStorage</code>, clé <code>theme</code>), sur votre appareil seulement. Il n'est jamais transmis.</p>
+
+    <h2>L'hébergeur</h2>
+    <p>Le site est hébergé par GitHub Pages. Comme tout hébergeur web, GitHub peut enregistrer des données techniques de connexion (adresse IP, date, page demandée, sans la partie après « # ») pour la sécurité de son service. Voir la <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">déclaration de confidentialité de GitHub</a>.</p>
+  </article>
+</Base>

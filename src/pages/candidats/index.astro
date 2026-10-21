@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import Portrait from '../../components/Portrait.astro';
+import { candidats, candidatsRetires, lien, listeQuestions, positionsConnues } from '../../lib/donnees';
+---
+
+<Base titre="Candidats" description="Les fiches des candidats suivis par la Boussole présidentielle 2027 : statut, programme et positions sourcées, thème par thème." large>
+  <h1 class="text-4xl font-bold">Les candidats</h1>
+  <p class="mt-4 max-w-2xl text-muted-foreground">
+    {candidats.length} candidatures déclarées, désignées par un parti ou pressenties, par ordre alphabétique du nom de famille. Toutes les fiches suivent le même gabarit. La part de positions connues dit sur combien des {listeQuestions.length} questions une position sourcée a été trouvée.
+  </p>
+  <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {candidats.map((c) => (
+      <li class="brut-panel flex gap-4 bg-card p-4">
+        <Portrait slug={c.slug} nom={c.nom} taille="md" />
+        <div class="min-w-0">
+          <h2 class="font-sans text-lg font-bold leading-tight"><a class="lien" href={lien(`candidats/${c.slug}/`)}>{c.nom}</a></h2>
+          <p class="mt-1 text-sm">{c.parti}</p>
+          <p class="mt-1 text-xs text-muted-foreground">Statut : {c.statut}</p>
+          <p class="mt-1 text-xs text-muted-foreground">Positions connues : {positionsConnues(c)}/{listeQuestions.length}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+  {candidatsRetires.length > 0 && (
+    <section class="mt-12">
+      <h2 class="text-2xl font-bold">Candidatures retirées</h2>
+      <ul class="mt-4 list-disc pl-6">
+        {candidatsRetires.map((c) => <li><a class="lien" href={lien(`candidats/${c.slug}/`)}>{c.nom}</a> ({c.parti})</li>)}
+      </ul>
+    </section>
+  )}
+  <p class="mt-10 text-sm text-muted-foreground">Les photos viennent de Wikimedia Commons, sous licence libre ; l'auteur et la licence sont indiqués sur chaque fiche. Sans photo sous licence clairement libre, les initiales sont affichées.</p>
+</Base>

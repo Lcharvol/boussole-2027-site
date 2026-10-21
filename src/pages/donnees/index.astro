@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { dateFr, lien, meta } from '../../lib/donnees';
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+
+const taille = (f: string) => {
+  try {
+    const o = statSync(join(process.cwd(), 'public', 'donnees', f)).size;
+    return o > 1e6 ? `${(o / 1e6).toFixed(1).replace('.', ',')} Mo` : `${Math.round(o / 1e3)} ko`;
+  } catch {
+    return '';
+  }
+};
+const fichiers = [
+  { f: 'boussole-2027.json', d: 'Tout : questions, thèmes, échelle, fiches complètes des candidats (positions, citations, sources, confiance, relecture) et métadonnées.' },
+  { f: 'positions.csv', d: 'Une ligne par candidat et par question : valeur, confiance, relecture, date, source, citation, résumé.' },
+  { f: 'candidats.csv', d: 'Une ligne par candidat : parti, statut, programme, date de mise à jour, notes.' },
+  { f: 'questions.csv', d: 'Une ligne par affirmation : identifiant, thème, mode, texte.' },
+  { f: 'calcul.json', d: 'Version allégée utilisée pour le calcul dans le navigateur : valeurs et confiance seulement.' },
+];
+---
+
+<Base titre="Données ouvertes" description="Téléchargez les données de la Boussole présidentielle 2027 : questions, positions des candidats, citations et sources, en JSON et en CSV.">
+  <h1 class="text-4xl font-bold">Données ouvertes</h1>
+  <p class="mt-4 max-w-2xl text-muted-foreground">
+    Les fichiers sont générés à chaque construction du site depuis le <a class="lien" href={meta.depot}>dépôt du skill</a>, source unique des données{meta.commit && <> (version <a class="lien font-mono" href={`${meta.depot}/commit/${meta.commit}`}>{meta.commit.slice(0, 7)}</a>{meta.date_commit && <> du {dateFr(meta.date_commit)}</>})</>}. Ils sont sous licence MIT, comme le dépôt. Les CSV sont encodés en UTF-8, séparés par des virgules.
+  </p>
+  <ul class="mt-8 grid gap-4">
+    {fichiers.map((x) => (
+      <li class="brut-surface flex flex-col gap-2 bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="font-mono font-bold">{x.f}</p>
+          <p class="mt-1 text-sm text-muted-foreground">{x.d}</p>
+        </div>
+        <a class="brut-control brut-focus inline-flex h-10 shrink-0 items-center bg-primary px-4 text-sm text-primary-foreground" href={lien(`donnees/${x.f}`)} download>Télécharger<span class="sr-only"> {x.f}</span>{taille(x.f) && <>&nbsp;({taille(x.f)})</>}</a>
+      </li>
+    ))}
+  </ul>
+  <section class="prose-b mt-12">
+    <h2>Format</h2>
+    <ul>
+      <li><code>valeur</code> : de -2 (pas du tout d'accord) à 2 (tout à fait d'accord) ; vide si la position est inconnue.</li>
+      <li><code>confiance</code> : <code>programme</code>, <code>declaration</code> ou <code>deduite</code>.</li>
+      <li><code>relu</code> : <code>true</code> si un humain a ouvert la source et vérifié la citation, le résumé et la valeur.</li>
+    </ul>
+    <p>Le format complet des fiches est décrit dans <a href={`${meta.depot}/blob/main/skills/boussole-presidentielle-2027/data/candidats/_FORMAT.md`}>_FORMAT.md</a>. Il n'y a aucune donnée sur les visiteurs du site : il n'en collecte pas.</p>
+  </section>
+</Base>

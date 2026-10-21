@@ -1,0 +1,61 @@
+---
+import Base from '../../layouts/Base.astro';
+import Portrait from '../../components/Portrait.astro';
+import Position from '../../components/Position.astro';
+import { candidats, lien, listeQuestions, questions, themes } from '../../lib/donnees';
+import { VALEURS, type Question } from '../../lib/types';
+
+export function getStaticPaths() {
+  return listeQuestions.map((q) => ({ params: { id: q.id }, props: { q } }));
+}
+const { q } = Astro.props as { q: Question };
+const i = listeQuestions.findIndex((x) => x.id === q.id);
+const prec = listeQuestions[i - 1];
+const suiv = listeQuestions[i + 1];
+// Groupes par valeur, de « tout à fait d'accord » à « pas du tout d'accord », puis positions inconnues.
+// Dans chaque groupe, l'ordre alphabétique des noms est conservé.
+const groupes = [
+  ...VALEURS.map((v) => ({ v: v as number | null, titre: questions.echelle[String(v)], liste: candidats.filter((c) => c.positions[q.id]?.valeur === v) })),
+  { v: null, titre: 'Position inconnue', liste: candidats.filter((c) => c.positions[q.id]?.valeur == null) },
+];
+---
+
+<Base titre={q.texte} description={`Qui pense quoi : position des candidats à la présidentielle 2027 sur « ${q.texte} », avec les citations et les sources.`}>
+  <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('questions/')}>Qui pense quoi</a> <span aria-hidden="true">›</span> {themes[q.theme]}</nav>
+  <p class="mt-6 brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">{themes[q.theme]} · mode {q.niveau}</p>
+  <h1 class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">« {q.texte} »</h1>
+  <p class="mt-4 text-sm text-muted-foreground">Affirmation reprise telle qu'elle est posée dans le test. Les positions sont classées de « tout à fait d'accord » à « pas du tout d'accord », puis par ordre alphabétique.</p>
+
+  <nav aria-label="Aller à un groupe" class="mt-6">
+    <ul class="flex flex-wrap gap-2 text-sm">
+      {groupes.map((g, k) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#g${k}`}>{g.titre} ({g.liste.length})</a></li>)}
+    </ul>
+  </nav>
+
+  {groupes.map((g, k) => (
+    <section id={`g${k}`} class="mt-10 scroll-mt-6" aria-labelledby={`titre-g${k}`}>
+      <h2 id={`titre-g${k}`} class="text-2xl font-bold">{g.titre} <span class="font-sans text-base font-semibold text-muted-foreground">({g.liste.length})</span></h2>
+      {g.liste.length === 0 ? <p class="mt-3 text-sm text-muted-foreground">Aucun candidat.</p> : g.v === null ? (
+        <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          {g.liste.map((c) => <li><a class="lien" href={lien(`candidats/${c.slug}/`)}>{c.nom}</a></li>)}
+        </ul>
+      ) : (
+        <ul class="mt-4 grid gap-5">
+          {g.liste.map((c) => (
+            <li class="flex gap-4">
+              <Portrait slug={c.slug} nom={c.nom} taille="sm" />
+              <div class="min-w-0 flex-1">
+                <Position position={c.positions[q.id]} titre={`${c.nom} (${c.parti})`} titreHref={lien(`candidats/${c.slug}/`)} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  ))}
+
+  <nav aria-label="Questions voisines" class="mt-12 flex flex-wrap justify-between gap-4 text-sm">
+    {prec ? <a class="lien" href={lien(`questions/${prec.id}/`)}>← {prec.texte}</a> : <span></span>}
+    {suiv && <a class="lien text-right" href={lien(`questions/${suiv.id}/`)}>{suiv.texte} →</a>}
+  </nav>
+</Base>

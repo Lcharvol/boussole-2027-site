@@ -1,0 +1,13 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Test from '../../../components/Test';
+import { lien, listeQuestions, questions, themes } from '../../../lib/donnees';
+---
+
+<Base titre="Test en mode classe" description="Le questionnaire de la Boussole présidentielle 2027 en mode classe : sans classement ni nom de candidat, pour discuter des arguments.">
+  <h1 class="text-4xl font-bold">Le test, en mode classe</h1>
+  <p class="mt-3 max-w-2xl text-muted-foreground">Mêmes affirmations que le test habituel. À la fin, pas de classement de candidats : chaque réponse est placée à côté de la répartition des positions des programmes, sans aucun nom.</p>
+  <div class="mt-8">
+    <Test client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} classe />
+  </div>
+</Base>

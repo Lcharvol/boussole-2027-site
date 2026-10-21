@@ -1,0 +1,26 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "node scripts/serveur-test.mjs",
+      "startServerReadyPattern": "Site servi",
+      "numberOfRuns": 1,
+      "url": [
+        "http://localhost:4322/boussole-2027-site/",
+        "http://localhost:4322/boussole-2027-site/resultat/moyen/#1.20261021.m.a_db_eca__d_be_cad__bec__ad__beca__dbe__.21111311",
+        "http://localhost:4322/boussole-2027-site/candidats/jean-lassalle/",
+        "http://localhost:4322/boussole-2027-site/calendrier/"
+      ],
+      "settings": {
+        "onlyCategories": ["accessibility"],
+        "chromeFlags": "--no-sandbox --headless=new --blink-settings=preferredColorScheme=0"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "color-contrast": "error"
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": ".lighthouseci/rapports-sombre" }
+  }
+}

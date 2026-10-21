@@ -1,0 +1,36 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "node scripts/serveur-test.mjs",
+      "startServerReadyPattern": "Site servi",
+      "numberOfRuns": 1,
+      "url": [
+        "http://localhost:4322/boussole-2027-site/",
+        "http://localhost:4322/boussole-2027-site/test/",
+        "http://localhost:4322/boussole-2027-site/resultat/moyen/#1.20261021.m.a_db_eca__d_be_cad__bec__ad__beca__dbe__.21111311",
+        "http://localhost:4322/boussole-2027-site/candidats/",
+        "http://localhost:4322/boussole-2027-site/candidats/jean-lassalle/",
+        "http://localhost:4322/boussole-2027-site/questions/eco_retraite/",
+        "http://localhost:4322/boussole-2027-site/comparer/?c=marine-tondelier,edouard-philippe",
+        "http://localhost:4322/boussole-2027-site/methode/",
+        "http://localhost:4322/boussole-2027-site/calendrier/",
+        "http://localhost:4322/boussole-2027-site/classe/",
+        "http://localhost:4322/boussole-2027-site/classe/economie/",
+        "http://localhost:4322/boussole-2027-site/donnees/"
+      ],
+      "settings": {
+        "onlyCategories": ["accessibility", "best-practices", "seo"],
+        "chromeFlags": "--no-sandbox --headless=new"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "color-contrast": "error",
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["warn", { "minScore": 0.8 }]
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": ".lighthouseci/rapports" }
+  }
+}

@@ -1,0 +1,50 @@
+---
+import Base from '../../layouts/Base.astro';
+import { fiches, introThemes } from '../../data/classe';
+import { lien, questionsParTheme, questions } from '../../lib/donnees';
+import { repartition } from '../../lib/repartition';
+
+export function getStaticPaths() {
+  return questionsParTheme.map((t) => ({ params: { theme: t.theme }, props: { t } }));
+}
+const { t } = Astro.props as { t: (typeof questionsParTheme)[number] };
+const VALS = ['2', '1', '0', '-1', '-2', 'inconnue'];
+---
+
+<Base titre={`Fiche classe : ${t.libelle}`} description={`Fiche pédagogique neutre sur le thème « ${t.libelle} » : contexte et arguments avancés de part et d'autre, pour chaque affirmation de la Boussole présidentielle 2027.`}>
+  <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('classe/')}>En classe</a> <span aria-hidden="true">›</span> {t.libelle}</nav>
+  <h1 class="mt-6 text-4xl font-bold">{t.libelle}</h1>
+  <p class="mt-3 max-w-2xl text-lg text-muted-foreground">{introThemes[t.theme]}</p>
+  <p class="mt-4 max-w-2xl text-sm text-muted-foreground">Pour chaque affirmation : quelques faits pour situer le débat, puis un argument avancé par celles et ceux qui sont d'accord, et un argument avancé par celles et ceux qui ne le sont pas. Ces arguments ne sont pas des vérités : ils sont à discuter, sources à l'appui.</p>
+  <ol class="mt-8 grid gap-8">
+    {t.questions.map((q) => {
+      const f = fiches[q.id];
+      const r = repartition[q.id];
+      return (
+        <li id={q.id} class="brut-panel scroll-mt-6 bg-card p-5">
+          <h2 class="font-sans text-xl font-bold leading-snug">« {q.texte} »</h2>
+          {f && (
+            <>
+              <h3 class="mt-4 font-sans text-sm font-bold uppercase tracking-wide">Contexte</h3>
+              <p class="mt-1 text-[0.95rem] leading-relaxed">{f.contexte}</p>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div class="brut-surface bg-background p-3">
+                  <h3 class="font-sans text-sm font-bold">Plutôt d'accord</h3>
+                  <p class="mt-1 text-sm leading-relaxed">{f.pour.replace(/^Argument avancé : /, '')}</p>
+                </div>
+                <div class="brut-surface bg-background p-3">
+                  <h3 class="font-sans text-sm font-bold">Plutôt pas d'accord</h3>
+                  <p class="mt-1 text-sm leading-relaxed">{f.contre.replace(/^Argument avancé : /, '')}</p>
+                </div>
+              </div>
+            </>
+          )}
+          <p class="mt-4 text-xs text-muted-foreground">
+            Positions des programmes suivis : {VALS.map((k) => `${r[k]} ${k === 'inconnue' ? 'inconnue(s)' : questions.echelle[k].toLowerCase()}`).join(' · ')}.
+            <a class="lien" href={lien(`questions/${q.id}/`)}>Voir les positions sourcées</a> (avec les noms des candidats).
+          </p>
+        </li>
+      );
+    })}
+  </ol>
+</Base>
