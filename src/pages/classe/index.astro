@@ -17,7 +17,7 @@ const deroule = [
   <h1 class="text-4xl font-bold">La boussole en classe</h1>
   <p class="mt-4 max-w-2xl text-lg text-muted-foreground">Pour l'enseignement moral et civique, l'histoire-géographie ou les sciences économiques et sociales : comprendre les enjeux d'une élection, distinguer un fait d'un argument, vérifier une source.</p>
 
-  <section class="mt-10 grid gap-5 sm:grid-cols-3" aria-label="Principes du mode classe">
+  <section class="mt-10 grid gap-5 sm:grid-cols-3" aria-label="Principes du mode classe" data-cascade>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucun résultat nominatif</h2><p class="mt-1 text-sm text-muted-foreground">Le test en mode classe n'affiche ni classement ni nom de candidat : seulement la répartition des positions, pour discuter des idées.</p></div>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucune collecte</h2><p class="mt-1 text-sm text-muted-foreground">Pas de compte, pas de code de classe, pas de tableau de bord : les réponses restent sur l'appareil de chaque élève.</p></div>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Des arguments des deux côtés</h2><p class="mt-1 text-sm text-muted-foreground">Chaque fiche donne un contexte factuel et un argument de chaque côté, de longueur comparable, sans nom de parti.</p></div>
@@ -27,7 +27,7 @@ const deroule = [
 
   <section class="mt-14" aria-labelledby="titre-deroule">
     <h2 id="titre-deroule" class="text-3xl font-bold">Déroulé d'une séance (55 minutes)</h2>
-    <ol class="mt-6 grid gap-4">
+    <ol class="mt-6 grid gap-4" data-cascade>
       {deroule.map((e, i) => (
         <li class="brut-surface grid gap-1 bg-card p-4 sm:grid-cols-[7rem_1fr] sm:gap-4">
           <p class="font-serif text-lg font-bold">{i + 1}. {e.duree}</p>
@@ -39,7 +39,7 @@ const deroule = [
 
   <section class="mt-14" aria-labelledby="titre-fiches">
     <h2 id="titre-fiches" class="text-3xl font-bold">Fiches par thème</h2>
-    <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+    <ul class="mt-6 grid gap-4 sm:grid-cols-2" data-cascade>
       {questionsParTheme.map((t) => (
         <li class="brut-surface bg-card p-4">
           <a class="lien font-bold" href={lien(`classe/${t.theme}/`)}>{t.libelle}</a>

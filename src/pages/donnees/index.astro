@@ -27,7 +27,7 @@ const fichiers = [
   <p class="mt-4 max-w-2xl text-muted-foreground">
     Les fichiers sont générés à chaque construction du site depuis le <a class="lien" href={meta.depot}>dépôt du skill</a>, source unique des données{meta.commit && <> (version <a class="lien font-mono" href={`${meta.depot}/commit/${meta.commit}`}>{meta.commit.slice(0, 7)}</a>{meta.date_commit && <> du {dateFr(meta.date_commit)}</>})</>}. Ils sont sous licence MIT, comme le dépôt. Les CSV sont encodés en UTF-8, séparés par des virgules.
   </p>
-  <ul class="mt-8 grid gap-4">
+  <ul class="mt-8 grid gap-4" data-cascade>
     {fichiers.map((x) => (
       <li class="brut-surface flex flex-col gap-2 bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

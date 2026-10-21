@@ -9,9 +9,9 @@ import { candidats, candidatsRetires, lien, listeQuestions, positionsConnues } f
   <p class="mt-4 max-w-2xl text-muted-foreground">
     {candidats.length} candidatures déclarées, désignées par un parti ou pressenties, par ordre alphabétique du nom de famille. Toutes les fiches suivent le même gabarit. La part de positions connues dit sur combien des {listeQuestions.length} questions une position sourcée a été trouvée.
   </p>
-  <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-cascade>
     {candidats.map((c) => (
-      <li class="brut-panel flex gap-4 bg-card p-4">
+      <li class="survol survol-photo brut-panel flex gap-4 bg-card p-4">
         <Portrait slug={c.slug} nom={c.nom} taille="md" />
         <div class="min-w-0">
           <h2 class="font-sans text-lg font-bold leading-tight"><a class="lien" href={lien(`candidats/${c.slug}/`)}>{c.nom}</a></h2>

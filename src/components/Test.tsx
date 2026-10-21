@@ -122,8 +122,8 @@ export default function Test({ questions, themes, echelle, version, base, classe
         </h2>
         <p className="mt-2 text-muted-foreground">Vous pourrez passer au mode supérieur à la fin, sans recommencer.</p>
         <ul className="mt-6 grid gap-5 md:grid-cols-3">
-          {MODES.map((m) => (
-            <li key={m.id} className="flex">
+          {MODES.map((m, i) => (
+            <li key={m.id} className="entree flex" style={{ ['--delai' as string]: `${i * 90}ms` }}>
               <button
                 type="button"
                 onClick={() => choisirMode(m.id)}
@@ -231,21 +231,26 @@ export default function Test({ questions, themes, echelle, version, base, classe
         <p className="text-sm font-semibold text-muted-foreground">
           Thème {etape.i + 1} sur {etapesThemes.length}
         </p>
-        <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="mt-1 scroll-mt-4 text-3xl font-bold outline-none sm:text-4xl">
+        <h2 key={e.theme} id="titre-etape" ref={titreRef} tabIndex={-1} className="entree mt-1 scroll-mt-4 text-3xl font-bold outline-none sm:text-4xl">
           {themes[e.theme]}
         </h2>
         <ol className="mt-6 grid gap-6">
-          {e.questions.map((q) => {
+          {e.questions.map((q, iq) => {
             const v = reponses[q.id];
             const valeur = v === undefined ? null : v === null ? 'passe' : String(v);
             return (
-              <li key={q.id} id={`carte-${q.id}`} className={`brut-panel scroll-mt-24 bg-card p-4 transition-colors sm:p-6 ${v !== undefined ? 'border-foreground' : ''}`}>
+              <li
+                key={q.id}
+                id={`carte-${q.id}`}
+                className={`entree brut-panel scroll-mt-24 bg-card p-4 transition-colors sm:p-6 ${v !== undefined ? 'border-foreground' : ''}`}
+                style={{ ['--delai' as string]: `${iq * 90}ms` }}
+              >
                 <p className="flex items-center justify-between text-xs font-bold tracking-wide text-muted-foreground uppercase">
                   <span>
                     Question {numero(q.id)} / {aPoser.length}
                   </span>
                   {v !== undefined && (
-                    <span className="inline-flex items-center gap-1 normal-case">
+                    <span className="apparition inline-flex items-center gap-1 normal-case">
                       <Icone nom="check" taille={14} />
                       {v === null ? 'Passée' : 'Répondu'}
                     </span>
@@ -267,7 +272,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
                       className={
                         o.v === 'passe'
                           ? 'brut-focus flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-dashed border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted has-[[data-checked]]:border-solid has-[[data-checked]]:bg-muted has-[[data-checked]]:text-foreground sm:col-span-5 sm:justify-self-start'
-                          : 'brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center'
+                          : 'brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground motion-safe:has-[[data-checked]]:animate-[pop_0.28s_ease-out] sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center'
                       }
                     >
                       <RadioGroupItem value={o.v} />
@@ -320,7 +325,11 @@ export default function Test({ questions, themes, echelle, version, base, classe
             const choisi = (importance[t] ?? 1) > 1;
             const bloque = !choisi && nbPrio >= MAX_PRIORITES;
             return (
-              <li key={t} className={`brut-surface p-3 transition-colors ${choisi ? 'bg-primary/25' : 'bg-card'} ${bloque ? 'opacity-60' : ''}`}>
+              <li
+                key={t}
+                className={`entree brut-surface p-3 transition-colors ${choisi ? 'bg-primary/25' : 'bg-card'} ${bloque ? 'opacity-60' : ''}`}
+                style={{ ['--delai' as string]: `${themesRepondus.indexOf(t) * 50}ms` }}
+              >
                 <label className="flex cursor-pointer items-center gap-3 font-semibold">
                   <Checkbox
                     checked={choisi}

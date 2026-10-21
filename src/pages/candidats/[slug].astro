@@ -21,7 +21,7 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
 
 <Base titre={c.nom} description={`Positions de ${c.nom} (${c.parti}) sur les 40 questions de la Boussole présidentielle 2027, avec les citations et les sources.`}>
   <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('candidats/')}>Candidats</a> <span aria-hidden="true">›</span> {c.nom}</nav>
-  <header class="mt-6 flex flex-col gap-6 sm:flex-row">
+  <header class="entree mt-6 flex flex-col gap-6 sm:flex-row">
     <Portrait slug={c.slug} nom={c.nom} taille="lg" credit />
     <div class="min-w-0">
       <h1 class="text-4xl font-bold">{c.nom}</h1>
@@ -47,7 +47,7 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
   {questionsParTheme.map((t) => (
     <section id={t.theme} class="mt-12 scroll-mt-6" aria-labelledby={`titre-${t.theme}`}>
       <h2 id={`titre-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
-      <ul class="mt-5 grid gap-5">
+      <ul class="mt-5 grid gap-5" data-cascade>
         {t.questions.map((q) => (
           <li>
             <Position position={c.positions[q.id]} titre={q.texte} titreHref={lien(`questions/${q.id}/`)} />

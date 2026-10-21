@@ -67,6 +67,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
         try { if (localStorage.getItem('theme') === 'dark') t = 'dark'; } catch (e) {}
         if (/[?&]theme=sombre\b/.test(location.search)) t = 'dark';
         document.documentElement.dataset.theme = t;
+        document.documentElement.classList.add('js');
       })();
     </script>
   </head>
@@ -75,7 +76,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     <header class="border-b-[length:var(--brut-border)] border-border bg-card">
       <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
         <a href={lien()} class="flex items-center gap-2 font-serif text-lg font-bold leading-tight" aria-label="Boussole 2027, accueil">
-          <svg aria-hidden="true" viewBox="0 0 32 32" class="size-8 shrink-0"><circle cx="16" cy="16" r="14" fill="var(--card)" stroke="currentColor" stroke-width="2.5"></circle><path d="M16 5 L20 16 L16 27 L12 16 Z" fill="var(--primary)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path><circle cx="16" cy="16" r="2" fill="currentColor"></circle></svg>
+          <svg aria-hidden="true" viewBox="0 0 32 32" class="size-8 shrink-0"><circle cx="16" cy="16" r="14" fill="var(--card)" stroke="currentColor" stroke-width="2.5"></circle><path class="aiguille" d="M16 5 L20 16 L16 27 L12 16 Z" fill="var(--primary)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path><circle cx="16" cy="16" r="2" fill="currentColor"></circle></svg>
           <span>Boussole <span class="whitespace-nowrap">2027</span></span>
         </a>
         <nav aria-label="Navigation principale" class="ml-auto hidden lg:block">
@@ -150,6 +151,43 @@ const actif = (href: string) => chemin.startsWith(lien(href));
           maj();
         });
         var m = document.getElementById('menu-mobile');
+
+        // Apparition au défilement : [data-revele] ; les enfants directs de [data-cascade] apparaissent
+        // les uns après les autres. Compteurs : [data-compteur] compte jusqu'à sa valeur finale.
+        var calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        document.querySelectorAll('[data-cascade]').forEach(function (g) {
+          Array.prototype.forEach.call(g.children, function (e, i) {
+            e.setAttribute('data-revele', '');
+            e.style.setProperty('--delai', Math.min(i, 8) * 70 + 'ms');
+          });
+        });
+        function compter(e) {
+          var fin = Number(e.getAttribute('data-compteur'));
+          if (calme || !fin) return;
+          var t0 = null;
+          function pas(t) {
+            if (t0 === null) t0 = t;
+            var x = Math.min(1, (t - t0) / 1100);
+            e.textContent = String(Math.round(fin * (1 - Math.pow(1 - x, 3))));
+            if (x < 1) requestAnimationFrame(pas);
+          }
+          requestAnimationFrame(pas);
+        }
+        if (!calme) document.querySelectorAll('[data-compteur]').forEach(function (e) { e.textContent = '0'; });
+        var cibles = document.querySelectorAll('[data-revele], [data-compteur]');
+        if (!('IntersectionObserver' in window)) {
+          cibles.forEach(function (e) { e.classList.add('est-visible'); });
+        } else {
+          var io = new IntersectionObserver(function (entrees) {
+            entrees.forEach(function (en) {
+              if (!en.isIntersecting) return;
+              en.target.classList.add('est-visible');
+              if (en.target.hasAttribute('data-compteur')) compter(en.target);
+              io.unobserve(en.target);
+            });
+          }, { rootMargin: '0px 0px -8% 0px' });
+          cibles.forEach(function (e) { io.observe(e); });
+        }
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
       })();
     </script>

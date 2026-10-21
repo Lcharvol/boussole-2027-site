@@ -23,11 +23,11 @@ const repartition = (qid: string) => {
   {questionsParTheme.map((t) => (
     <section class="mt-10" aria-labelledby={`t-${t.theme}`}>
       <h2 id={`t-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
-      <ul class="mt-4 grid gap-3">
+      <ul class="mt-4 grid gap-3" data-cascade>
         {t.questions.map((q) => {
           const r = repartition(q.id);
           return (
-            <li class="brut-surface bg-card p-4">
+            <li class="survol brut-surface bg-card p-4">
               <a class="lien font-semibold" href={lien(`questions/${q.id}/`)}>{q.texte}</a>
               <p class="mt-2 text-xs text-muted-foreground">
                 {r.pour} d'accord · {r.neutre} partagé{r.neutre > 1 ? 's' : ''} · {r.contre} pas d'accord · {r.inconnu} position{r.inconnu > 1 ? 's' : ''} inconnue{r.inconnu > 1 ? 's' : ''} · mode {q.niveau}
