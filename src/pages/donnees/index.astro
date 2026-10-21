@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Icone from '../../components/Icone';
 import { dateFr, lien, meta } from '../../lib/donnees';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -33,7 +34,7 @@ const fichiers = [
           <p class="font-mono font-bold">{x.f}</p>
           <p class="mt-1 text-sm text-muted-foreground">{x.d}</p>
         </div>
-        <a class="brut-control brut-focus inline-flex h-10 shrink-0 items-center bg-primary px-4 text-sm text-primary-foreground" href={lien(`donnees/${x.f}`)} download>Télécharger<span class="sr-only"> {x.f}</span>{taille(x.f) && <>&nbsp;({taille(x.f)})</>}</a>
+        <a class="brut-control brut-focus inline-flex h-10 shrink-0 items-center gap-2 bg-primary px-4 text-sm text-primary-foreground" href={lien(`donnees/${x.f}`)} download><Icone client:visible nom="download" taille={18} />Télécharger<span class="sr-only"> {x.f}</span>{taille(x.f) && <>&nbsp;({taille(x.f)})</>}</a>
       </li>
     ))}
   </ul>

@@ -3,6 +3,7 @@
 // que le navigateur ne transmet jamais au serveur.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import Icone from './Icone';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress, ProgressLabel } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -137,7 +138,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
                 </span>
                 <span className={`mt-3 flex-1 text-sm font-normal ${m.id === 'moyen' ? '' : 'text-muted-foreground'}`}>{m.fiabilite}</span>
                 <span className="mt-5 inline-flex items-center gap-1 text-base font-bold underline decoration-2 underline-offset-4">
-                  Commencer <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
+                  Commencer <Icone nom="arrow-right" taille={20} />
                 </span>
               </button>
             </li>
@@ -244,8 +245,8 @@ export default function Test({ questions, themes, echelle, version, base, classe
                     Question {numero(q.id)} / {aPoser.length}
                   </span>
                   {v !== undefined && (
-                    <span className="normal-case">
-                      <span aria-hidden="true">✓ </span>
+                    <span className="inline-flex items-center gap-1 normal-case">
+                      <Icone nom="check" taille={14} />
                       {v === null ? 'Passée' : 'Répondu'}
                     </span>
                   )}
@@ -286,11 +287,13 @@ export default function Test({ questions, themes, echelle, version, base, classe
             onClick={() => setEtape(etape.i === 0 ? (repriseDe ? { type: 'theme', i: 0 } : { type: 'mode' }) : { type: 'theme', i: etape.i - 1 })}
             disabled={etape.i === 0 && !!repriseDe}
           >
-            ← <span className="hidden sm:inline">{etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}</span>
+            <Icone nom="arrow-left" taille={18} />
+            <span className="hidden sm:inline">{etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}</span>
             <span className="sm:hidden">Retour</span>
           </Button>,
           <Button className="h-11 px-5" onClick={() => setEtape(dernier ? { type: 'priorites' } : { type: 'theme', i: etape.i + 1 })}>
-            {dernier ? 'Mes priorités →' : 'Thème suivant →'}
+            {dernier ? 'Mes priorités' : 'Thème suivant'}
+            <Icone nom="arrow-right" taille={18} />
           </Button>,
         )}
       </section>
@@ -347,11 +350,13 @@ export default function Test({ questions, themes, echelle, version, base, classe
       <p className="mt-6 text-sm text-muted-foreground">Le calcul se fait dans votre navigateur. Vos réponses ne sont ni envoyées, ni enregistrées.</p>
       {barre(
         <Button variant="outline" className="h-11 px-4" onClick={() => setEtape({ type: 'theme', i: Math.max(0, etapesThemes.length - 1) })}>
-          ← <span className="hidden sm:inline">Revenir aux questions</span>
+          <Icone nom="arrow-left" taille={18} />
+          <span className="hidden sm:inline">Revenir aux questions</span>
           <span className="sm:hidden">Retour</span>
         </Button>,
         <Button className="h-11 px-5 text-base" onClick={terminer}>
-          {classe ? 'Voir la carte →' : 'Voir mon résultat →'}
+          {classe ? 'Voir la carte' : 'Voir mon résultat'}
+          <Icone nom="arrow-right" taille={20} />
         </Button>,
       )}
     </section>

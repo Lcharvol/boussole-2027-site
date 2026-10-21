@@ -95,10 +95,6 @@
 
 /* Texte long (pages Méthode, À propos…) : rendu lisible du contenu Markdown ou HTML simple. */
 @layer components {
-  .icone-soleil { display: none; }
-  [data-theme="dark"] .icone-soleil { display: block; }
-  [data-theme="dark"] .icone-lune { display: none; }
-
   .prose-b {
     max-width: 72ch;
     line-height: 1.65;
@@ -121,3 +117,8 @@
   .lien { text-decoration: underline; text-decoration-thickness: 2px; }
   .lien:hover { background: var(--primary); color: var(--primary-foreground); }
 }
+
+/* Bouton de thème : hors des couches, pour primer sur les utilitaires d'affichage des icônes. */
+.icone-soleil { display: none !important; }
+[data-theme="dark"] .icone-soleil { display: inline-flex !important; }
+[data-theme="dark"] .icone-lune { display: none !important; }
