@@ -28,7 +28,7 @@ const groupes = [
 
   <nav aria-label="Aller à un groupe" class="mt-6">
     <ul class="flex flex-wrap gap-2 text-sm">
-      {groupes.map((g, k) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#g${k}`}>{g.titre} ({g.liste.length})</a></li>)}
+      {groupes.map((g, k) => <li>{g.liste.length ? <a class="brut-quiet inline-block border-border px-2 py-1" href={`#g${k}`}>{g.titre} ({g.liste.length})</a> : <span class="inline-block px-2 py-1 text-muted-foreground">{g.titre} (0)</span>}</li>)}
     </ul>
   </nav>
 

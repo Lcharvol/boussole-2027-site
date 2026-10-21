@@ -76,7 +76,7 @@ export default function CarteClasse({ questions, themes, echelle, version, base,
                             </th>
                             <td className="py-0.5">
                               <div className="flex items-center gap-2">
-                                <div className="h-3 bg-primary brut-progress" style={{ width: `${(100 * (r[k] ?? 0)) / total}%`, minWidth: r[k] ? '4px' : 0 }} aria-hidden="true" />
+                                {(r[k] ?? 0) > 0 && <div className="h-3 bg-primary brut-progress" style={{ width: `${(100 * r[k]) / total}%`, minWidth: '6px' }} aria-hidden="true" />}
                                 <span className="tabular-nums">{r[k] ?? 0}</span>
                               </div>
                             </td>
