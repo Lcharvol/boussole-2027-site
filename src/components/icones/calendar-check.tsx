@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -92,7 +92,7 @@ const CalendarCheckIcon = forwardRef<
         <path d="M16 2v4" />
         <rect height="18" rx="2" width="18" x="3" y="4" />
         <path d="M3 10h18" />
-        <motion.path
+        <m.path
           animate={controls}
           d="m9 16 2 2 4-4"
           initial="normal"

@@ -42,6 +42,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
   const [dejaPosees, setDejaPosees] = useState<Set<string>>(new Set());
   const [etape, setEtape] = useState<Etape>({ type: 'mode' });
   const [repriseDe, setRepriseDe] = useState<Mode | null>(null);
+  const [modification, setModification] = useState(false);
   const titreRef = useRef<HTMLHeadingElement>(null);
   const premierRendu = useRef(true);
 
@@ -50,14 +51,21 @@ export default function Test({ questions, themes, echelle, version, base, classe
     const params = new URLSearchParams(location.hash.slice(1));
     const code = params.get('reprendre');
     const vers = params.get('vers') as Mode | null;
-    if (!code || !vers || !(vers in NB)) return;
+    const modifier = params.has('modifier');
+    if (!code || (!modifier && (!vers || !(vers in NB)))) return;
     const d = decoder(code, ordreQ, ordreT, version);
     if (!d) return;
     setReponses(d.etat.reponses);
     setImportance(d.etat.importance);
-    setDejaPosees(new Set(Object.keys(d.etat.reponses)));
-    setRepriseDe(d.etat.mode);
-    setMode(vers);
+    if (modifier) {
+      // Modification : toutes les questions du mode sont reposées, avec les réponses déjà données.
+      setModification(true);
+      setMode(d.etat.mode);
+    } else {
+      setDejaPosees(new Set(Object.keys(d.etat.reponses)));
+      setRepriseDe(d.etat.mode);
+      setMode(vers);
+    }
     setEtape({ type: 'theme', i: 0 });
     history.replaceState(null, '', location.pathname);
   }, [ordreQ, ordreT, version]);
@@ -212,6 +220,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
         <ProgressLabel className="text-xs">
           Mode {mode}
           {repriseDe && ` (suite du mode ${repriseDe})`}
+          {modification && ' (modification)'}
         </ProgressLabel>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {repondues} / {aPoser.length} réponses

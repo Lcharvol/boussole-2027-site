@@ -45,9 +45,18 @@ console.log(`${profils.length} profils, calcul Python…`);
 execFileSync('python3', ['-I', join(RACINE, 'scripts', 'concordance_python.py'), skill, join(dossier, 'profils.json'), join(dossier, 'python.json')], { stdio: 'inherit' });
 const py = JSON.parse(readFileSync(join(dossier, 'python.json'), 'utf8'));
 const actifs = candidatsActifs(candidats);
+// Le navigateur calcule à partir de public/donnees/calcul.json (valeurs et confiance seulement) :
+// on vérifie aussi ce chemin-là.
+const leger = JSON.parse(readFileSync(join(RACINE, 'public', 'donnees', 'calcul.json'), 'utf8'));
+const actifsLegers = candidatsActifs(leger.candidats);
 let ecarts = 0;
 profils.forEach((p, i) => {
   const ts = JSON.parse(JSON.stringify(calculer(p, questions, actifs)));
+  const tsLeger = JSON.parse(JSON.stringify(calculer(p, questions, actifsLegers)));
+  if (!isDeepStrictEqual(ts, tsLeger)) {
+    ecarts++;
+    console.error(`Écart entre données complètes et calcul.json sur le profil ${i}`);
+  }
   if (!isDeepStrictEqual(ts, py.resultats[i])) {
     ecarts++;
     if (ecarts <= 3) {
@@ -61,4 +70,4 @@ if (ecarts) {
   console.error(`✗ ${ecarts} profil(s) sur ${profils.length} diffèrent entre score.ts et score.py (Python ${py.python}).`);
   process.exit(1);
 }
-console.log(`✓ score.ts et score.py (Python ${py.python}) donnent des résultats identiques sur ${profils.length} profils.`);
+console.log(`✓ score.ts (données complètes et calcul.json) et score.py (Python ${py.python}) donnent des résultats identiques sur ${profils.length} profils.`);

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { decoder, encoder, type Etat } from '@/lib/partage';
-import { calculer, candidatsActifs, NIVEAU, type Resultat as Res, type ResultatCandidat } from '@/lib/score';
+import { calculer, candidatsActifs, NIVEAU, type CandidatCalcul, type Resultat as Res, type ResultatCandidat } from '@/lib/score';
 import { CONFIANCE, NIVEAUX_DU_MODE, type Candidat, type Mode, type Photos, type Question } from '@/lib/types';
 import Icone from './Icone';
 import { PortraitMini } from './Portrait';
@@ -70,7 +70,10 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   const [etat, setEtat] = useState<Etat | null>(null);
   const [versionDiff, setVersionDiff] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [candidats, setCandidats] = useState<Candidat[] | null>(null);
+  // Calcul à partir de la version allégée (valeurs et confiance, ~4 ko compressés) ; les fiches complètes
+  // (citations, sources) ne servent qu'au détail et se chargent ensuite, sans bloquer le classement.
+  const [candidats, setCandidats] = useState<CandidatCalcul[] | null>(null);
+  const [fiches, setFiches] = useState<Record<string, Candidat> | null>(null);
   const [res, setRes] = useState<Res | null>(null);
   const [detail, setDetail] = useState<string[]>([]);
   const [copie, setCopie] = useState<'' | 'ok' | 'ko'>('');
@@ -98,10 +101,14 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   }, [ordreQ, ordreT, version]);
 
   useEffect(() => {
-    fetch(`${base}donnees/boussole-2027.json`)
+    fetch(`${base}donnees/calcul.json`)
       .then((r) => r.json())
       .then((d) => setCandidats(d.candidats))
       .catch(() => setErreur('donnees'));
+    fetch(`${base}donnees/boussole-2027.json`)
+      .then((r) => r.json())
+      .then((d) => setFiches(Object.fromEntries(d.candidats.map((c: Candidat) => [c.slug, c]))))
+      .catch(() => {});
   }, [base]);
 
   useEffect(() => {
@@ -137,13 +144,16 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   }
   if (!etat || !res || !candidats) {
     return (
-      <p role="status" className="brut-surface bg-card p-4 font-semibold">
-        Calcul en cours, dans votre navigateur…
-      </p>
+      // Hauteur réservée : le classement remplace ce bloc sans faire sauter la mise en page.
+      <div className="min-h-[150vh]">
+        <p role="status" className="brut-surface bg-card p-4 font-semibold">
+          Calcul en cours, dans votre navigateur…
+        </p>
+      </div>
     );
   }
 
-  const nom = Object.fromEntries(candidats.map((c) => [c.slug, c]));
+  const nom = fiches ?? {};
   const nbPasse = Object.values(etat.reponses).filter((v) => v === null).length;
   const prio = Object.entries(etat.importance).filter(([, v]) => v > 1);
   const code = encoder(etat, ordreQ, ordreT, version);
@@ -215,7 +225,13 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   const carteDetail = (slug: string) => {
     const r = [...res.classement, ...res.donnees_insuffisantes].find((x) => x.slug === slug);
     const c = nom[slug];
-    if (!r || !c) return null;
+    if (!r) return null;
+    if (!c)
+      return (
+        <p key={slug} role="status" className="brut-surface bg-card p-4 text-sm">
+          Chargement des citations…
+        </p>
+      );
     const bloc = (qid: string) => {
       const q = parId[qid];
       const p = c.positions[qid]!;
@@ -247,7 +263,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
     return (
       <article key={slug} id={`detail-${slug}`} tabIndex={-1} className="entree brut-panel scroll-mt-6 bg-card p-4 outline-none sm:p-5" aria-labelledby={`d-${slug}`}>
         <header className="flex items-center gap-3">
-          <PortraitMini slug={slug} nom={c.nom} photos={photos} base={base} className="w-14" />
+          <PortraitMini slug={slug} nom={c.nom} photos={photos} base={base} className="w-14" sizes="56px" />
           <div>
             <h3 id={`d-${slug}`} className="text-xl font-bold">
               {c.nom}
@@ -338,7 +354,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
               {tete.map((r, i) => (
                 <li key={r.slug} className="entree min-w-0" style={{ ['--delai' as string]: `${i * 120}ms` }}>
                   <a href={`#detail-${r.slug}`} onClick={(e) => (e.preventDefault(), voirDetail(r.slug))} className="survol-photo group block">
-                    <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} className="w-full max-w-36" eager />
+                    <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} className="w-full max-w-36" sizes="(min-width: 640px) 144px, 30vw" eager />
                     <span className="mt-2 block text-sm leading-tight font-bold group-hover:underline sm:text-base">
                       {i + 1}. {r.nom}
                     </span>
@@ -517,9 +533,15 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           )}
           <ul className="mt-4 grid gap-2 text-sm">
             <li>
-              <a className="lien inline-flex items-center gap-1.5" href={`${base}test/`}>
+              <a className="lien inline-flex items-center gap-1.5" href={`${base}test/#reprendre=${code}&modifier=1`}>
                 <Icone nom="rotate-ccw" taille={16} />
-                Refaire le test
+                Modifier mes réponses
+              </a>
+            </li>
+            <li>
+              <a className="lien inline-flex items-center gap-1.5" href={`${base}test/`}>
+                <Icone nom="arrow-right" taille={16} />
+                Refaire le test depuis le début
               </a>
             </li>
             <li>

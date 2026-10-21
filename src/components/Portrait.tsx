@@ -10,7 +10,24 @@ export function initiales(nom: string) {
     .slice(0, 3);
 }
 
-export function PortraitMini({ slug, nom, photos, base, className = 'w-12', eager = false }: { slug: string; nom: string; photos: Photos; base: string; className?: string; eager?: boolean }) {
+export function PortraitMini({
+  slug,
+  nom,
+  photos,
+  base,
+  className = 'w-12',
+  eager = false,
+  sizes = '48px',
+}: {
+  slug: string;
+  nom: string;
+  photos: Photos;
+  base: string;
+  className?: string;
+  eager?: boolean;
+  /** Largeur affichée, pour que le navigateur choisisse la bonne taille de portrait. */
+  sizes?: string;
+}) {
   const p = photos[slug]?.photo;
   return (
     <div className={`brut-surface relative aspect-[4/5] shrink-0 overflow-hidden bg-muted ${className}`}>
@@ -18,7 +35,17 @@ export function PortraitMini({ slug, nom, photos, base, className = 'w-12', eage
         {initiales(nom)}
       </div>
       {p && (
-        <img src={`${base}photos/${p.image}`} alt="" width={96} height={120} loading={eager ? 'eager' : 'lazy'} decoding="async" className="relative size-full object-cover object-[50%_25%]" />
+        <img
+          src={`${base}portraits/${slug}-96.webp`}
+          srcSet={[96, 192, 320].map((l) => `${base}portraits/${slug}-${l}.webp ${l}w`).join(', ')}
+          sizes={sizes}
+          alt=""
+          width={96}
+          height={120}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          className="relative size-full object-cover"
+        />
       )}
     </div>
   );

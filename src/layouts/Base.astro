@@ -48,6 +48,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     <meta name="referrer" content="no-referrer" />
     <link rel="icon" href={lien('favicon.svg')} type="image/svg+xml" />
     <link rel="sitemap" href={lien('sitemap.xml')} />
+    <slot name="head" />
     <meta name="theme-color" content="#fbf9f1" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />

@@ -53,8 +53,8 @@ const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' 
         {meta.nb_questions} affirmations sur {Object.keys(themes).length} grands thèmes, comparées aux positions de {meta.nb_candidats} candidats déclarés ou pressentis. Chaque position est sourcée par une citation exacte et relue par un humain.
       </p>
       <div class="entree mt-7 grid gap-3 sm:flex sm:flex-wrap sm:gap-4" style="--delai: 240ms">
-        <a href={lien('test/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center gap-2 bg-primary px-7 text-lg text-primary-foreground">Faire le test <Icone client:load nom="arrow-right" taille={22} /></a>
-        <a href={lien('questions/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center gap-2 bg-background px-7 text-lg"><Icone client:load nom="message-circle-more" taille={22} />Voir qui pense quoi</a>
+        <a href={lien('test/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center gap-2 bg-primary px-7 text-lg text-primary-foreground">Faire le test <Icone client:idle nom="arrow-right" taille={22} /></a>
+        <a href={lien('questions/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center gap-2 bg-background px-7 text-lg"><Icone client:idle nom="message-circle-more" taille={22} />Voir qui pense quoi</a>
       </div>
       <p class="mt-4 text-sm text-muted-foreground">De 2 à 12 minutes · sans inscription · rien n'est enregistré</p>
       <p class="mt-6 text-sm font-semibold">Proximité avec des programmes, pas une consigne de vote.</p>

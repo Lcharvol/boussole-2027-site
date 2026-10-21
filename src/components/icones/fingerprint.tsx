@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -88,7 +88,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"
             variants={PATH_VARIANTS}
@@ -100,7 +100,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M14 13.12c0 2.38 0 6.38-1 8.88"
             variants={PATH_VARIANTS}
@@ -112,7 +112,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M17.29 21.02c.12-.6.43-2.3.5-3.02"
             variants={PATH_VARIANTS}
@@ -124,14 +124,14 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M2 12a10 10 0 0 1 18-6"
             variants={PATH_VARIANTS}
           />
 
           <path d="M2 16h.01" fill="none" strokeOpacity={0.4} strokeWidth="2" />
-          <motion.path
+          <m.path
             animate={controls}
             d="M2 16h.01"
             variants={PATH_VARIANTS}
@@ -143,7 +143,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M21.8 16c.2-2 .131-5.354 0-6"
             variants={PATH_VARIANTS}
@@ -155,7 +155,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"
             variants={PATH_VARIANTS}
@@ -167,7 +167,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M8.65 22c.21-.66.45-1.32.57-2"
             variants={PATH_VARIANTS}
@@ -179,7 +179,7 @@ const FingerprintIcon = forwardRef<FingerprintIconHandle, FingerprintIconProps>(
             strokeOpacity={0.4}
             strokeWidth="2"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M9 6.8a6 6 0 0 1 9 5.2v2"
             variants={PATH_VARIANTS}

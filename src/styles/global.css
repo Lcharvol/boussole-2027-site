@@ -208,3 +208,18 @@
   .demo-choix { animation: demo-choix 7.5s linear infinite; animation-delay: calc(var(--i) * 1.5s); }
   .demo-choix .demo-point { animation: demo-point 7.5s linear infinite; animation-delay: calc(var(--i) * 1.5s); }
 }
+
+/* Le focus clavier ne doit jamais finir caché sous la barre collée du test (WCAG 2.4.11). */
+html:has(#barre-test) { scroll-padding-bottom: 10rem; }
+
+/* Impression (fiches du mode classe, fiches candidats…) : contenu seul, sans fond ni ombres. */
+@media print {
+  header, footer, nav, #bouton-theme, #menu-mobile, .no-print, astro-island:has(button) { display: none !important; }
+  body { background: #fff !important; background-image: none !important; color: #000 !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  .brut-panel, .brut-surface, .brut-control { box-shadow: none !important; }
+  .js [data-revele] { opacity: 1 !important; translate: none !important; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; word-break: break-all; }
+  li, article, blockquote { break-inside: avoid; }
+}

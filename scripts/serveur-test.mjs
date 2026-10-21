@@ -2,6 +2,7 @@
 // Petit serveur statique pour les tests (Lighthouse) : sert dist/ sous /boussole-2027-site/, comme GitHub Pages.
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { createGzip } from 'node:zlib';
 import { extname, join, normalize, resolve } from 'node:path';
 
 const DIST = resolve(import.meta.dirname, '..', 'dist');
@@ -23,6 +24,13 @@ createServer((req, res) => {
     createReadStream(join(DIST, '404.html')).pipe(res);
     return;
   }
-  res.writeHead(200, { 'content-type': TYPES[extname(f)] ?? 'application/octet-stream' });
+  // Compression gzip comme GitHub Pages, pour des mesures de performance réalistes.
+  const type = TYPES[extname(f)] ?? 'application/octet-stream';
+  if (/text|javascript|json|svg|csv/.test(type) && /gzip/.test(req.headers['accept-encoding'] ?? '')) {
+    res.writeHead(200, { 'content-type': type, 'content-encoding': 'gzip', vary: 'accept-encoding' });
+    createReadStream(f).pipe(createGzip()).pipe(res);
+    return;
+  }
+  res.writeHead(200, { 'content-type': type });
   createReadStream(f).pipe(res);
 }).listen(PORT, () => console.log(`Site servi sur http://localhost:${PORT}${BASE}`));

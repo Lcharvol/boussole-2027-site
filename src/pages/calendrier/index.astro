@@ -1,7 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { calendrier } from '../../data/calendrier';
-import { dateFr } from '../../lib/donnees';
+import Icone from '../../components/Icone';
+import { dateFr, lien } from '../../lib/donnees';
 const aujourdhui = new Date().toISOString().slice(0, 10);
 const prochaine = calendrier.find((e) => e.date && e.date >= aujourdhui);
 const STATUT = {
@@ -15,6 +16,11 @@ const STATUT = {
   <h1 class="text-4xl font-bold">Calendrier de la présidentielle 2027</h1>
   <p class="mt-4 max-w-2xl text-muted-foreground">
     Dates vérifiées le 21 octobre 2026 sur les sites officiels du Gouvernement et du ministère de l'Intérieur. Ce qui n'est pas encore fixé par décret est signalé comme tel. En cas de doute, la source officielle fait foi.
+  </p>
+  <p class="mt-6">
+    <a class="brut-control brut-focus inline-flex h-11 items-center gap-2 bg-primary px-5 text-sm text-primary-foreground" href={lien('calendrier/presidentielle-2027.ics')} download>
+      <Icone client:visible nom="calendar-check" taille={18} />Ajouter les dates officielles à mon agenda (.ics)
+    </a>
   </p>
   <ol class="relative mt-10 grid gap-6 border-l-[length:var(--brut-border)] border-border pl-6" data-cascade>
     {calendrier.map((e) => (

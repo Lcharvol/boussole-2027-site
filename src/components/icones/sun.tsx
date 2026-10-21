@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -86,7 +86,7 @@ const SunIcon = forwardRef<SunIconHandle, SunIconProps>(
             "M2 12h2",
             "m4.93 4.93 1.41 1.41",
           ].map((d, index) => (
-            <motion.path
+            <m.path
               animate={controls}
               custom={index + 1}
               d={d}

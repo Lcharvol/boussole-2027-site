@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -95,19 +95,19 @@ const MessageCircleMoreIcon = forwardRef<
         xmlns="http://www.w3.org/2000/svg"
       >
         <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-        <motion.path
+        <m.path
           animate={controls}
           custom={0}
           d="M8 12h.01"
           variants={DOT_VARIANTS}
         />
-        <motion.path
+        <m.path
           animate={controls}
           custom={1}
           d="M12 12h.01"
           variants={DOT_VARIANTS}
         />
-        <motion.path
+        <m.path
           animate={controls}
           custom={2}
           d="M16 12h.01"

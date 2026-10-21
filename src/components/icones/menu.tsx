@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -85,7 +85,7 @@ const MenuIcon = forwardRef<MenuIconHandle, MenuIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.line
+          <m.line
             animate={controls}
             custom={1}
             initial="normal"
@@ -95,7 +95,7 @@ const MenuIcon = forwardRef<MenuIconHandle, MenuIconProps>(
             y1="6"
             y2="6"
           />
-          <motion.line
+          <m.line
             animate={controls}
             custom={2}
             initial="normal"
@@ -105,7 +105,7 @@ const MenuIcon = forwardRef<MenuIconHandle, MenuIconProps>(
             y1="12"
             y2="12"
           />
-          <motion.line
+          <m.line
             animate={controls}
             custom={3}
             initial="normal"
