@@ -19,7 +19,12 @@ const parConfiance = Object.keys(CONFIANCE).map((k) => ({
 const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.relu).length;
 ---
 
-<Base titre={c.nom} description={`Positions de ${c.nom} (${c.parti}) sur les 40 questions de la Boussole présidentielle 2027, avec les citations et les sources.`}>
+<Base
+  titre={c.nom}
+  description={`Positions de ${c.nom} (${c.parti}) sur les 40 questions de la Boussole présidentielle 2027, avec les citations et les sources.`}
+  image={`og/candidats/${c.slug}.png`}
+  imageAlt={`Fiche de ${c.nom} (${c.parti}) : ${connues} positions sourcées sur ${listeQuestions.length}.`}
+>
   <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('candidats/')}>Candidats</a> <span aria-hidden="true">›</span> {c.nom}</nav>
   <header class="entree mt-6 flex flex-col gap-6 sm:flex-row">
     <Portrait slug={c.slug} nom={c.nom} taille="lg" credit />

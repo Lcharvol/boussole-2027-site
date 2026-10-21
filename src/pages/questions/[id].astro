@@ -20,7 +20,12 @@ const groupes = [
 ];
 ---
 
-<Base titre={q.texte} description={`Qui pense quoi : position des candidats à la présidentielle 2027 sur « ${q.texte} », avec les citations et les sources.`}>
+<Base
+  titre={q.texte}
+  description={`Qui pense quoi : position des candidats à la présidentielle 2027 sur « ${q.texte} », avec les citations et les sources.`}
+  image={`og/questions/${q.id}.png`}
+  imageAlt={`« ${q.texte} » : répartition des positions des candidats.`}
+>
   <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('questions/')}>Qui pense quoi</a> <span aria-hidden="true">›</span> {themes[q.theme]}</nav>
   <p class="mt-6 brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">{themes[q.theme]} · mode {q.niveau}</p>
   <h1 class="entree mt-3 text-3xl font-bold leading-tight sm:text-4xl">« {q.texte} »</h1>

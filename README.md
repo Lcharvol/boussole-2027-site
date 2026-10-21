@@ -35,11 +35,13 @@ Le résultat mesure une proximité avec des programmes, pas une consigne de vote
 ```
 scripts/
   preparer-donnees.mjs   récupère le dépôt du skill, écrit src/generated/ et public/donnees/, lance l'audit
-  images-partage.mjs     images Open Graph (générique + une par mode) avec satori et resvg
+  images-partage.mjs     images de partage (Open Graph) avec satori et resvg : générique, une par mode de
+                         résultat (sans résultat ni nom), une par candidat (même gabarit pour tous, crédit
+                         photo) et une par question (répartition des positions, sans nom)
   images-portraits.mjs   portraits WebP recadrés en 4:5 (96, 192, 320 px) à partir de public/photos/
   concordance.ts         compare score.ts et score.py sur des profils fixes et aléatoires
   concordance_python.py  côté Python du test de concordance
-  verifier-liens.mjs     vérifie les liens et ancres internes de dist/
+  verifier-liens.mjs     vérifie les liens, ancres et images de partage internes de dist/
   serveur-test.mjs       sert dist/ sous /boussole-2027-site/ pour Lighthouse
   photos.py              met à jour les photos Wikimedia Commons (lancé à la main)
 src/

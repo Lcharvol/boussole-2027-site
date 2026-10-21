@@ -44,6 +44,8 @@ let liens = 0;
 for (const page of pages) {
   const html = readFileSync(page, 'utf8');
   const urls = [...html.matchAll(/\s(?:href|src)="([^"]*)"/g)].map((m) => m[1].replaceAll('&amp;', '&'));
+  // Images de partage : URL absolues vers le site publié, le fichier doit exister dans dist/.
+  for (const m of html.matchAll(/property="og:image" content="https:\/\/lcharvol\.github\.io(\/[^"]+)"/g)) urls.push(m[1]);
   for (const brut of urls) {
     if (!brut || /^(https?:|mailto:|tel:|data:|javascript:)/.test(brut)) continue;
     // Les URL de résultat portent les réponses après # : ce n'est pas une ancre.
