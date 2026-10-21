@@ -131,3 +131,80 @@
 .icone-soleil { display: none !important; }
 [data-theme="dark"] .icone-soleil { display: inline-flex !important; }
 [data-theme="dark"] .icone-lune { display: none !important; }
+
+/* ---------------------------------------------------------------------------------------------
+   Animations. Toutes sont réservées aux visiteurs qui n'ont pas demandé de réduire les animations,
+   et le contenu reste visible sans JavaScript (l'état masqué n'existe que sous html.js).
+   --------------------------------------------------------------------------------------------- */
+@keyframes entree {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes barre {
+  from { width: 0; }
+}
+@keyframes apparition {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  0% { scale: 1; }
+  40% { scale: 1.04; }
+  100% { scale: 1; }
+}
+@keyframes aiguille {
+  0% { rotate: -50deg; }
+  45% { rotate: 28deg; }
+  70% { rotate: -12deg; }
+  88% { rotate: 5deg; }
+  100% { rotate: 0deg; }
+}
+@keyframes pulsation {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 70%, transparent); }
+  100% { box-shadow: 0 0 0 10px transparent; }
+}
+/* Démonstration de l'accueil : la sélection parcourt l'échelle de réponse (cycle de 7,5 s). */
+@keyframes demo-choix {
+  0%, 16% { background: var(--primary); color: var(--primary-foreground); }
+  20%, 100% { background: var(--background); color: var(--foreground); }
+}
+@keyframes demo-point {
+  0%, 16% { background: var(--primary-foreground); scale: 1; }
+  20%, 100% { background: transparent; scale: 0.4; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 0.22s; }
+
+  .js [data-revele] {
+    opacity: 0;
+    translate: 0 18px;
+    transition: opacity 0.6s ease, translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--delai, 0ms);
+  }
+  .js [data-revele].est-visible { opacity: 1; translate: 0 0; }
+
+  .entree { animation: entree 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--delai, 0ms); }
+  .apparition { animation: apparition 0.4s ease both; animation-delay: var(--delai, 0ms); }
+  .barre-anim { animation: barre 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--delai, 0ms); }
+  .pop { animation: pop 0.28s ease-out; }
+
+  .aiguille { transform-box: fill-box; transform-origin: center; animation: aiguille 1.4s cubic-bezier(0.3, 0.7, 0.3, 1) 0.15s both; }
+  a:hover .aiguille, a:focus-visible .aiguille { animation: aiguille 1s cubic-bezier(0.3, 0.7, 0.3, 1) both; }
+
+  .pulsation { animation: pulsation 1.6s ease-out infinite; }
+
+  /* Cartes et liens-cartes : légère élévation au survol, dans l'esprit Brut/UI. */
+  .survol { transition: translate 0.15s ease, box-shadow 0.15s ease; }
+  .survol:hover, .survol:focus-within {
+    translate: -2px -2px;
+    box-shadow: calc(var(--brut-panel-shadow-x) + 2px) calc(var(--brut-panel-shadow-y) + 2px) 0 var(--brut-shadow-color);
+  }
+  .survol-photo img { transition: scale 0.3s ease; }
+  .survol-photo:hover img, .survol-photo:focus-visible img { scale: 1.06; }
+
+  .demo-choix { animation: demo-choix 7.5s linear infinite; animation-delay: calc(var(--i) * 1.5s); }
+  .demo-choix .demo-point { animation: demo-point 7.5s linear infinite; animation-delay: calc(var(--i) * 1.5s); }
+}

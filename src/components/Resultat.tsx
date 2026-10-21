@@ -24,21 +24,43 @@ const NB: Record<Mode, number> = { rapide: 8, moyen: 24, long: 40 };
 const SUIVANT: Partial<Record<Mode, Mode[]>> = { rapide: ['moyen', 'long'], moyen: ['long'] };
 const signe = (v: number) => (v > 0 ? `+${v}` : String(v));
 
-function Barre({ score, marge }: { score: number; marge: number | null }) {
+function Barre({ score, marge, delai = 0 }: { score: number; marge: number | null; delai?: number }) {
   const m = marge ?? 0;
   const g = Math.max(0, score - m);
   const d = Math.min(100, score + m);
   return (
     <div className="brut-progress relative h-5 w-full" aria-hidden="true">
-      <div className="h-full bg-primary" style={{ width: `${score}%` }} />
+      <div className="barre-anim h-full bg-primary" style={{ width: `${score}%`, ['--delai' as string]: `${delai}ms` }} />
       <div className="absolute -inset-y-0.5 left-1/2 w-0.5 bg-foreground/45" />
       {m > 0 && (
-        <div className="absolute top-1/2 h-2.5 -translate-y-1/2 border-x-2 border-foreground" style={{ left: `${g}%`, width: `${d - g}%` }}>
+        <div className="apparition absolute top-1/2 h-2.5 -translate-y-1/2 border-x-2 border-foreground" style={{ left: `${g}%`, width: `${d - g}%`, ['--delai' as string]: `${delai + 600}ms` }}>
           <div className="absolute top-1/2 h-0.5 w-full -translate-y-1/2 bg-foreground" />
         </div>
       )}
     </div>
   );
+}
+
+/** Nombre qui compte de 0 à sa valeur (immobile si le visiteur demande de réduire les animations). */
+function Compteur({ valeur }: { valeur: number }) {
+  const [v, setV] = useState(() => (typeof window !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches ? valeur : 0));
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setV(valeur);
+      return;
+    }
+    let t0: number | null = null;
+    let id = 0;
+    const pas = (t: number) => {
+      if (t0 === null) t0 = t;
+      const x = Math.min(1, (t - t0) / 900);
+      setV(Math.round(valeur * (1 - Math.pow(1 - x, 3))));
+      if (x < 1) id = requestAnimationFrame(pas);
+    };
+    id = requestAnimationFrame(pas);
+    return () => cancelAnimationFrame(id);
+  }, [valeur]);
+  return <>{v}</>;
 }
 
 export default function Resultat({ questions, themes, echelle, version, base, photos }: Props) {
@@ -149,7 +171,10 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   }
 
   const ligne = (r: ResultatCandidat, rang: number | null) => (
-    <li key={r.slug} className="brut-surface grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 bg-card p-3 sm:grid-cols-[2rem_auto_1fr_14rem_auto] sm:items-center sm:gap-x-4">
+    <li
+      key={r.slug}
+      style={{ ['--delai' as string]: `${Math.min((rang ?? 12) - 1, 12) * 45}ms` }}
+      className="entree survol brut-surface grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 bg-card p-3 sm:grid-cols-[2rem_auto_1fr_14rem_auto] sm:items-center sm:gap-x-4">
       <span className="hidden text-right font-serif text-xl font-bold text-muted-foreground sm:block">{rang ?? '—'}</span>
       <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} eager={rang !== null && rang <= 10} />
       <div className="min-w-0">
@@ -175,7 +200,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           </span>
           <span className="text-xs text-muted-foreground">couverture {Math.round(r.couverture * 100)} %</span>
         </p>
-        {r.score !== null && <Barre score={r.score} marge={r.marge} />}
+        {r.score !== null && <Barre score={r.score} marge={r.marge} delai={Math.min((rang ?? 12) - 1, 12) * 45 + 150} />}
         <p className="sr-only">
           Proximité {r.score ?? 'non calculable'} pour cent{r.marge !== null ? `, plus ou moins ${r.marge} points` : ''}, position connue sur {Math.round(r.couverture * 100)} % de vos réponses.
         </p>
@@ -220,7 +245,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
       );
     };
     return (
-      <article key={slug} id={`detail-${slug}`} tabIndex={-1} className="brut-panel scroll-mt-6 bg-card p-4 outline-none sm:p-5" aria-labelledby={`d-${slug}`}>
+      <article key={slug} id={`detail-${slug}`} tabIndex={-1} className="entree brut-panel scroll-mt-6 bg-card p-4 outline-none sm:p-5" aria-labelledby={`d-${slug}`}>
         <header className="flex items-center gap-3">
           <PortraitMini slug={slug} nom={c.nom} photos={photos} base={base} className="w-14" />
           <div>
@@ -299,15 +324,18 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
             </h2>
             <ul className="mt-5 grid grid-cols-3 gap-3 sm:gap-6">
               {tete.map((r, i) => (
-                <li key={r.slug} className="min-w-0">
-                  <a href={`#detail-${r.slug}`} onClick={(e) => (e.preventDefault(), voirDetail(r.slug))} className="group block">
+                <li key={r.slug} className="entree min-w-0" style={{ ['--delai' as string]: `${i * 120}ms` }}>
+                  <a href={`#detail-${r.slug}`} onClick={(e) => (e.preventDefault(), voirDetail(r.slug))} className="survol-photo group block">
                     <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} className="w-full max-w-36" eager />
                     <span className="mt-2 block text-sm leading-tight font-bold group-hover:underline sm:text-base">
                       {i + 1}. {r.nom}
                     </span>
                     <span className="block text-xs text-muted-foreground sm:text-sm">{r.parti}</span>
                     <span className="mt-1 block font-bold tabular-nums">
-                      {r.score} % <span className="text-sm font-semibold">± {r.marge}</span>
+                      <span aria-hidden="true">
+                        <Compteur valeur={r.score ?? 0} /> %
+                      </span>
+                      <span className="sr-only">{r.score} %</span> <span className="text-sm font-semibold">± {r.marge}</span>
                     </span>
                   </a>
                 </li>
