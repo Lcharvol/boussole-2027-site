@@ -1,13 +1,14 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import CarteClasse from '../../../components/CarteClasse';
-import { lien, listeQuestions, questions, themes } from '../../../lib/donnees';
+import { lien, listeEnjeux, referentiel, themes } from '../../../lib/donnees';
+const enjeux = listeEnjeux.map(({ id, theme, pole_a, pole_b }) => ({ id, theme, pole_a, pole_b }));
 import { repartition } from '../../../lib/repartition';
 ---
 
 <Base titre="Carte des positions (mode classe)" noindex>
   <h1 class="text-4xl font-bold">Carte des positions</h1>
   <div class="mt-6">
-    <CarteClasse client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} repartition={repartition} />
+    <CarteClasse client:load enjeux={enjeux} themes={themes} version={referentiel.version} base={lien()} repartition={repartition} />
   </div>
 </Base>

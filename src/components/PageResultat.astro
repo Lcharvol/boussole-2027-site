@@ -1,20 +1,22 @@
 ---
 import Base from '../layouts/Base.astro';
 import Resultat from './Resultat';
-import { candidats, lien, listeQuestions, photos, questions, themes } from '../lib/donnees';
+import { candidats, lien, listeEnjeux, photos, referentiel, themes } from '../lib/donnees';
+import type { Mode } from '../lib/types';
 import { calculerCarte } from '../lib/acp';
 
 // Axes de la carte « vous et les candidats », calculés au build à partir des positions des candidats.
-const carte = calculerCarte(candidats, listeQuestions.map((q) => q.id));
+const carte = calculerCarte(candidats, listeEnjeux.map((q) => q.id));
 
-interface Props { mode?: 'rapide' | 'moyen' | 'long' }
+interface Props { mode?: Mode }
 const { mode } = Astro.props;
-const nb = { rapide: 8, moyen: 24, long: 40 };
+const nb: Record<Mode, string> = { rapide: '12 questions', adaptatif: '12 à 32 questions', complet: `${listeEnjeux.length} questions` };
+const enjeux = listeEnjeux.map(({ id, theme, pole_a, pole_b }) => ({ id, theme, pole_a, pole_b }));
 ---
 
 <Base
   titre={mode ? `Mon résultat (mode ${mode})` : 'Mon résultat'}
-  description={mode ? `Mon résultat à la Boussole présidentielle 2027, mode ${mode} (${nb[mode]} questions) : proximité avec les programmes, sources à l'appui. Faites le test vous aussi.` : "Résultat de la Boussole présidentielle 2027 : proximité avec les programmes, sources à l'appui."}
+  description={mode ? `Mon résultat à la Boussole présidentielle 2027, mode ${mode} (${nb[mode]}) : proximité avec les programmes, sources à l'appui. Faites le test vous aussi.` : "Résultat de la Boussole présidentielle 2027 : proximité avec les programmes, sources à l'appui."}
   image={mode ? `og/resultat-${mode}.png` : 'og/generique.png'}
   noindex
   large
@@ -22,7 +24,7 @@ const nb = { rapide: 8, moyen: 24, long: 40 };
   <link slot="head" rel="preload" href={lien('donnees/calcul.json')} as="fetch" crossorigin="anonymous" />
   <h1 class="text-4xl font-bold">Votre résultat</h1>
   <div class="mt-6">
-    <Resultat client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} photos={photos} carte={carte} />
+    <Resultat client:load enjeux={enjeux} themes={themes} version={referentiel.version} base={lien()} photos={photos} carte={carte} />
   </div>
   <noscript><p class="brut-surface mt-6 bg-card p-4">Le résultat est calculé dans votre navigateur et nécessite JavaScript.</p></noscript>
 </Base>

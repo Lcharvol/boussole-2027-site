@@ -1,13 +1,13 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Portrait from '../../components/Portrait.astro';
-import { candidats, candidatsRetires, lien, listeQuestions, positionsConnues } from '../../lib/donnees';
+import { candidats, candidatsRetires, lien, listeEnjeux, positionsConnues } from '../../lib/donnees';
 ---
 
 <Base titre="Candidats" description="Les fiches des candidats suivis par la Boussole présidentielle 2027 : statut, programme et positions sourcées, thème par thème." large>
   <h1 class="text-4xl font-bold">Les candidats</h1>
   <p class="mt-4 max-w-2xl text-muted-foreground">
-    {candidats.length} candidatures déclarées, désignées par un parti ou pressenties, par ordre alphabétique du nom de famille. Toutes les fiches suivent le même gabarit. La part de positions connues dit sur combien des {listeQuestions.length} questions une position sourcée a été trouvée.
+    {candidats.length} candidatures déclarées, désignées par un parti ou pressenties, par ordre alphabétique du nom de famille. Toutes les fiches suivent le même gabarit. La part de positions connues dit sur combien des {listeEnjeux.length} enjeux une position sourcée a été trouvée.
   </p>
   <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-cascade>
     {candidats.map((c) => (
@@ -17,7 +17,7 @@ import { candidats, candidatsRetires, lien, listeQuestions, positionsConnues } f
           <h2 class="font-sans text-lg font-bold leading-tight"><a class="lien" href={lien(`candidats/${c.slug}/`)}>{c.nom}</a></h2>
           <p class="mt-1 text-sm">{c.parti}</p>
           <p class="mt-1 text-xs text-muted-foreground">Statut : {c.statut}</p>
-          <p class="mt-1 text-xs text-muted-foreground">Positions connues : {positionsConnues(c)}/{listeQuestions.length}</p>
+          <p class="mt-1 text-xs text-muted-foreground">Positions connues : {positionsConnues(c)}/{listeEnjeux.length}</p>
         </div>
       </li>
     ))}

@@ -1,52 +1,53 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { fiches, introThemes } from '../../data/classe';
-import { lien, questionsParTheme, questions } from '../../lib/donnees';
+import { enjeuxParTheme, lien, titreEnjeu } from '../../lib/donnees';
+import { libelleCourt } from '../../lib/axe';
 import { repartition } from '../../lib/repartition';
 
 export function getStaticPaths() {
-  return questionsParTheme.map((t) => ({ params: { theme: t.theme }, props: { t } }));
+  return enjeuxParTheme.map((t) => ({ params: { theme: t.theme }, props: { t } }));
 }
-const { t } = Astro.props as { t: (typeof questionsParTheme)[number] };
-const VALS = ['2', '1', '0', '-1', '-2', 'inconnue'];
-// Le titre du bloc dit déjà de quel côté vient l'argument : on retire le préfixe et on rétablit la majuscule.
+const { t } = Astro.props as { t: (typeof enjeuxParTheme)[number] };
+const VALS = ['-2', '-1', '0', '1', '2', 'inconnue'];
+// Le titre du bloc dit déjà quel pôle l'argument défend : on retire le préfixe et on rétablit la majuscule.
 const sansPrefixe = (t: string) => {
   const s = t.replace(/^Argument avancé : /, '');
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 ---
 
-<Base titre={`Fiche classe : ${t.libelle}`} description={`Fiche pédagogique neutre sur le thème « ${t.libelle} » : contexte et arguments avancés de part et d'autre, pour chaque affirmation de la Boussole présidentielle 2027.`}>
+<Base titre={`Fiche classe : ${t.libelle}`} description={`Fiche pédagogique neutre sur le thème « ${t.libelle} » : contexte et un argument avancé pour chacune des deux options, pour chaque enjeu de la Boussole présidentielle 2027.`}>
   <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('classe/')}>En classe</a> <span aria-hidden="true">›</span> {t.libelle}</nav>
   <h1 class="mt-6 text-4xl font-bold">{t.libelle}</h1>
   <p class="mt-3 max-w-2xl text-lg text-muted-foreground">{introThemes[t.theme]}</p>
-  <p class="mt-4 max-w-2xl text-sm text-muted-foreground">Pour chaque affirmation : quelques faits pour situer le débat, puis un argument avancé par celles et ceux qui sont d'accord, et un argument avancé par celles et ceux qui ne le sont pas. Ces arguments ne sont pas des vérités : ils sont à discuter, sources à l'appui.</p>
+  <p class="mt-4 max-w-2xl text-sm text-muted-foreground">Pour chaque enjeu : quelques faits pour situer le débat, puis un argument avancé par celles et ceux qui défendent la première option (pôle A), et un argument avancé par celles et ceux qui défendent la seconde (pôle B). Ces arguments ne sont pas des vérités : ils sont à discuter, sources à l'appui.</p>
   <ol class="mt-8 grid gap-8" data-cascade>
-    {t.questions.map((q) => {
-      const f = fiches[q.id];
-      const r = repartition[q.id];
+    {t.enjeux.map((e) => {
+      const f = fiches[e.id];
+      const r = repartition[e.id];
       return (
-        <li id={q.id} class="brut-panel scroll-mt-6 bg-card p-5">
-          <h2 class="font-sans text-xl font-bold leading-snug">« {q.texte} »</h2>
+        <li id={e.id} class="brut-panel scroll-mt-6 bg-card p-5">
+          <h2 class="font-sans text-xl font-bold leading-snug">{titreEnjeu(e)}</h2>
           {f && (
             <>
               <h3 class="mt-4 font-sans text-sm font-bold uppercase tracking-wide">Contexte</h3>
               <p class="mt-1 text-[0.95rem] leading-relaxed">{f.contexte}</p>
               <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div class="brut-surface bg-background p-3">
-                  <h3 class="font-sans text-sm font-bold">Plutôt d'accord</h3>
-                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.pour)}</p>
+                  <h3 class="font-sans text-sm font-bold">Pôle A : {e.pole_a}</h3>
+                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.a)}</p>
                 </div>
                 <div class="brut-surface bg-background p-3">
-                  <h3 class="font-sans text-sm font-bold">Plutôt pas d'accord</h3>
-                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.contre)}</p>
+                  <h3 class="font-sans text-sm font-bold">Pôle B : {e.pole_b}</h3>
+                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.b)}</p>
                 </div>
               </div>
             </>
           )}
           <p class="mt-4 text-xs text-muted-foreground">
-            Positions des programmes suivis : {VALS.map((k) => `${r[k]} ${k === 'inconnue' ? 'inconnue(s)' : questions.echelle[k].toLowerCase()}`).join(' · ')}.
-            <a class="lien" href={lien(`questions/${q.id}/`)}>Voir les positions sourcées</a> (avec les noms des candidats).
+            Positions des programmes suivis : {VALS.map((k) => `${r[k]} ${k === 'inconnue' ? 'inconnue(s)' : libelleCourt(Number(k))}`).join(' · ')}.
+            <a class="lien" href={lien(`questions/${e.id}/`)}>Voir les positions sourcées</a> (avec les noms des candidats).
           </p>
         </li>
       );

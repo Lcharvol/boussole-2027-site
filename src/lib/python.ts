@@ -108,7 +108,7 @@ export class PyRandom {
   random(): number {
     const a = this.genrandUint32() >>> 5;
     const b = this.genrandUint32() >>> 6;
-    return (a * 67108864 + b) * (1 / 9007199254740992);
+    return (a * 67108864 + b) * 2 ** -53;
   }
 
   /** random.choice(seq). */

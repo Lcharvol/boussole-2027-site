@@ -1,41 +1,41 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { candidats, lien, questionsParTheme } from '../../lib/donnees';
+import { candidats, enjeuxParTheme, lien, listeEnjeux, titreEnjeu } from '../../lib/donnees';
 
-const repartition = (qid: string) => {
-  const r = { pour: 0, neutre: 0, contre: 0, inconnu: 0 };
+const repartition = (id: string) => {
+  const r = { a: 0, neutre: 0, b: 0, inconnu: 0 };
   for (const c of candidats) {
-    const v = c.positions[qid]?.valeur;
+    const v = c.positions[id]?.valeur;
     if (v == null) r.inconnu++;
-    else if (v > 0) r.pour++;
-    else if (v < 0) r.contre++;
+    else if (v < 0) r.a++;
+    else if (v > 0) r.b++;
     else r.neutre++;
   }
   return r;
 };
 ---
 
-<Base titre="Qui pense quoi" description="Les 40 affirmations de la Boussole présidentielle 2027 et la position de chaque candidat, avec les citations et les sources.">
+<Base titre="Qui pense quoi" description={`Les ${listeEnjeux.length} enjeux de la Boussole présidentielle 2027, chacun entre deux options, et la position de chaque candidat, avec les citations et les sources.`}>
   <h1 class="text-4xl font-bold">Qui pense quoi</h1>
   <p class="mt-4 max-w-2xl text-muted-foreground">
-    Une page par affirmation : la position de chaque candidat, avec la citation exacte, la source et le niveau de confiance. Les chiffres indiquent combien de candidats sont plutôt d'accord, partagés, plutôt pas d'accord, ou de position inconnue.
+    Une page par enjeu, entre deux options (pôle A et pôle B) : la position de chaque candidat, avec la citation exacte, la source et le niveau de confiance. Les chiffres indiquent combien de candidats penchent vers A, se situent entre les deux, penchent vers B, ou ont une position inconnue.
   </p>
   <nav aria-label="Thèmes" class="mt-6">
     <ul class="flex flex-wrap gap-2 text-sm">
-      {questionsParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#t-${t.theme}`}>{t.libelle}</a></li>)}
+      {enjeuxParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#t-${t.theme}`}>{t.libelle}</a></li>)}
     </ul>
   </nav>
-  {questionsParTheme.map((t) => (
+  {enjeuxParTheme.map((t) => (
     <section class="mt-10 scroll-mt-6" aria-labelledby={`t-${t.theme}`}>
       <h2 id={`t-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
       <ul class="mt-4 grid gap-3" data-cascade>
-        {t.questions.map((q) => {
-          const r = repartition(q.id);
+        {t.enjeux.map((e) => {
+          const r = repartition(e.id);
           return (
             <li class="survol brut-surface bg-card p-4">
-              <a class="lien font-semibold" href={lien(`questions/${q.id}/`)}>{q.texte}</a>
+              <a class="lien font-semibold" href={lien(`questions/${e.id}/`)}>{titreEnjeu(e)}</a>
               <p class="mt-2 text-xs text-muted-foreground">
-                {r.pour} d'accord · {r.neutre} partagé{r.neutre > 1 ? 's' : ''} · {r.contre} pas d'accord · {r.inconnu} position{r.inconnu > 1 ? 's' : ''} inconnue{r.inconnu > 1 ? 's' : ''} · mode {q.niveau}
+                {r.a} côté A · {r.neutre} entre les deux · {r.b} côté B · {r.inconnu} position{r.inconnu > 1 ? 's' : ''} inconnue{r.inconnu > 1 ? 's' : ''}
               </p>
             </li>
           );

@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
-import { CONFIANCE, type Candidat, type Photos, type Question } from '@/lib/types';
+import { initiales, libellePosition, titreEnjeu } from '@/lib/axe';
+import { CONFIANCE, type Candidat, type Enjeu, type Photos } from '@/lib/types';
+import Axe from './Axe';
 import { PortraitMini } from './Portrait';
 import Ecarts from './graphiques/Ecarts';
 
 interface Props {
-  questions: Question[];
+  enjeux: Pick<Enjeu, 'id' | 'theme' | 'pole_a' | 'pole_b'>[];
   themes: Record<string, string>;
-  echelle: Record<string, string>;
   base: string;
   photos: Photos;
   liste: { slug: string; nom: string }[]; // ordre alphabétique du nom de famille
@@ -18,7 +19,7 @@ interface Props {
 
 const MAX = 3;
 
-export default function Comparateur({ questions, themes, echelle, base, photos, liste }: Props) {
+export default function Comparateur({ enjeux, themes, base, photos, liste }: Props) {
   const [choix, setChoix] = useState<string[]>(['', '', '']);
   const [candidats, setCandidats] = useState<Record<string, Candidat> | null>(null);
   const [erreur, setErreur] = useState(false);
@@ -48,13 +49,13 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
 
   const qs = useMemo(
     () =>
-      questions.filter((q) => {
+      enjeux.filter((q) => {
         if (theme && q.theme !== theme) return false;
         if (!divergences || !candidats) return true;
         // Divergence : les candidats choisis n'ont pas tous la même position (inconnue comprise).
         return new Set(actifs.map((s) => candidats[s]?.positions[q.id]?.valeur ?? null)).size > 1;
       }),
-    [questions, theme, divergences, candidats, actifs.join(',')],
+    [enjeux, theme, divergences, candidats, actifs.join(',')],
   );
 
   return (
@@ -93,7 +94,7 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
       </label>
       <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold">
         <input type="checkbox" className="size-5 accent-[var(--primary)]" checked={divergences} onChange={(e) => setDivergences(e.target.checked)} />
-        Seulement les questions où ils divergent
+        Seulement les enjeux où ils divergent
       </label>
       </div>
 
@@ -107,10 +108,10 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
       {actifs.length >= 2 && candidats && (
         <div className="mt-8">
           <div className="mb-8">
-            <Ecarts choisis={actifs.map((s) => candidats[s])} questions={questions.filter((q) => !theme || q.theme === theme)} echelle={echelle} />
+            <Ecarts choisis={actifs.map((s) => candidats[s])} enjeux={enjeux.filter((q) => !theme || q.theme === theme)} />
           </div>
           <p aria-live="polite" className="text-sm text-muted-foreground">
-            {qs.length} question{qs.length > 1 ? 's' : ''} affichée{qs.length > 1 ? 's' : ''}
+            {qs.length} enjeu{qs.length > 1 ? 'x' : ''} affiché{qs.length > 1 ? 's' : ''}
           </p>
           <div className="sticky top-0 z-10 mt-2 hidden gap-3 border-b-[length:var(--brut-border)] border-border bg-background py-3 sm:grid" style={{ gridTemplateColumns: `repeat(${actifs.length}, minmax(0, 1fr))` }}>
             {actifs.map((s) => (
@@ -130,10 +131,13 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
               <li key={q.id}>
                 <h2 className="font-sans text-base font-bold">
                   <a className="lien" href={`${base}questions/${q.id}/`}>
-                    {q.texte}
+                    {titreEnjeu(q)}
                   </a>{' '}
                   <span className="text-xs font-semibold text-muted-foreground">({themes[q.theme]})</span>
                 </h2>
+                <div className="mt-2 max-w-xl">
+                  <Axe e={q} marques={actifs.map((s) => ({ valeur: candidats[s].positions[q.id]?.valeur, signe: initiales(candidats[s].nom) }))} />
+                </div>
                 <div className="mt-2 grid gap-2 sm:gap-3 sm:[grid-template-columns:repeat(var(--n),minmax(0,1fr))]" style={{ ['--n' as string]: actifs.length }}>
                   {actifs.map((s) => {
                     const p = candidats[s].positions[q.id];
@@ -146,7 +150,7 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
                           </span>
                           {candidats[s].nom} :
                         </p>
-                        <p className="font-bold">{connue ? echelle[String(p!.valeur)] : 'Position inconnue'}</p>
+                        <p className="font-bold">{connue ? libellePosition(p!.valeur, q) : 'Position inconnue'}</p>
                         {connue && p!.citation && (
                           <details className="mt-1">
                             <summary className="cursor-pointer text-xs font-semibold">Citation et source</summary>

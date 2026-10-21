@@ -1,18 +1,18 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Test from '../../components/Test';
-import { lien, listeQuestions, questions, themes } from '../../lib/donnees';
+import { candidatsCalcul, lien, referentielTest, themes } from '../../lib/donnees';
 ---
 
-<Base titre="Faire le test" description="Le questionnaire de la Boussole présidentielle 2027 : 8, 24 ou 40 affirmations, thème par thème. Calcul dans votre navigateur, aucune donnée collectée.">
+<Base titre="Faire le test" description="Le questionnaire de la Boussole présidentielle 2027 : des dilemmes entre deux options, 12 à 40 questions mêlant 8 thèmes. Calcul dans votre navigateur, aucune donnée collectée.">
   <h1 class="text-4xl font-bold">Le test</h1>
   <p class="mt-3 max-w-2xl text-muted-foreground">
-    Des affirmations sur 8 thèmes ; répondez de « tout à fait d'accord » à « pas du tout d'accord », ou passez. Les affirmations sont reprises mot pour mot, et les positions des candidats ne sont pas montrées pendant le test, pour ne pas influencer vos réponses.
+    Des dilemmes sur {Object.keys(themes).length} thèmes : pour chaque question, situez-vous entre deux options, sur cinq crans, ou passez. Les positions des candidats ne sont pas montrées pendant le test, pour ne pas influencer vos réponses.
   </p>
   <div class="mt-8">
-    <Test client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} />
+    <Test client:load referentiel={referentielTest} candidats={candidatsCalcul} base={lien()} />
   </div>
   <noscript>
-    <p class="brut-surface mt-6 bg-card p-4">Le test a besoin de JavaScript : le calcul se fait dans votre navigateur, pour que vos réponses ne soient jamais envoyées. Vous pouvez consulter sans JavaScript les <a class="lien" href={lien('questions/')}>positions des candidats, question par question</a>.</p>
+    <p class="brut-surface mt-6 bg-card p-4">Le test a besoin de JavaScript : le tirage des questions et le calcul se font dans votre navigateur, pour que vos réponses ne soient jamais envoyées. Vous pouvez consulter sans JavaScript les <a class="lien" href={lien('questions/')}>positions des candidats, enjeu par enjeu</a>.</p>
   </noscript>
 </Base>

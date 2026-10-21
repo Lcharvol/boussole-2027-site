@@ -1,29 +1,22 @@
-// Comparateur : pour 2 ou 3 candidats, leurs positions question par question sur l'échelle de
-// réponse, reliées par un trait (haltères). Trié par désaccord (écart le plus grand en premier).
+// Comparateur : pour 2 ou 3 candidats, leurs positions enjeu par enjeu, du pôle A (à gauche) au pôle B
+// (à droite), reliées par un trait (haltères). Trié par désaccord (écart le plus grand en premier).
 // Même couleur pour tous ; chaque candidat est identifié par ses initiales et la légende.
 import { useState } from 'react';
-import type { Candidat, Question } from '@/lib/types';
+import { initiales, libellePosition, titreEnjeu } from '@/lib/axe';
+import type { Candidat, Enjeu } from '@/lib/types';
 import Figure from './Figure';
 
 interface Props {
   choisis: Candidat[];
-  questions: Question[];
-  echelle: Record<string, string>;
+  enjeux: Pick<Enjeu, 'id' | 'theme' | 'pole_a' | 'pole_b'>[];
 }
 
-const initiales = (n: string) =>
-  n
-    .split(/[\s-]+/)
-    .filter((m) => /^[A-ZÀ-Ý]/.test(m))
-    .map((m) => m[0])
-    .join('')
-    .slice(0, 3);
 const x = (v: number) => `${10 + ((v + 2) / 4) * 80}%`;
 const PREMIERES = 12;
 
-export default function Ecarts({ choisis, questions, echelle }: Props) {
+export default function Ecarts({ choisis, enjeux }: Props) {
   const [tout, setTout] = useState(false);
-  const lignes = questions
+  const lignes = enjeux
     .map((q) => {
       const vals = choisis.map((c) => c.positions[q.id]?.valeur ?? null);
       const connues = vals.filter((v): v is number => v !== null);
@@ -41,14 +34,14 @@ export default function Ecarts({ choisis, questions, echelle }: Props) {
       titre="Où ils divergent le plus"
       description={
         <>
-          Pour chaque affirmation, la position de chaque candidat de « {echelle['-2']} » (à gauche) à « {echelle['2']} » (à droite), reliées par un trait : plus le trait est long,
-          plus ils sont en désaccord. Seules les affirmations où au moins deux d'entre eux ont une position connue figurent.
+          Pour chaque enjeu, la position de chaque candidat entre le pôle A (à gauche) et le pôle B (à droite), reliées par un trait : plus le trait est long, plus ils sont en
+          désaccord. Seuls les enjeux où au moins deux d'entre eux ont une position connue figurent.
         </>
       }
-      tri="Ordre : de l'écart le plus grand au plus petit, puis ordre du test."
+      tri="Ordre : de l'écart le plus grand au plus petit, puis ordre des données."
       tableau={{
-        entetes: ['Affirmation', ...choisis.map((c) => c.nom), 'Écart (crans)'],
-        lignes: lignes.map((l) => [l.q.texte, ...l.vals.map((v) => (v === null ? 'inconnue' : echelle[String(v)])), l.ecart]),
+        entetes: ['Enjeu (pôle A ou pôle B)', ...choisis.map((c) => c.nom), 'Écart (crans)'],
+        lignes: lignes.map((l) => [titreEnjeu(l.q), ...l.vals.map((v) => (v === null ? 'inconnue' : libellePosition(v, l.q))), l.ecart]),
       }}
     >
       <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-hidden="true">
@@ -68,8 +61,10 @@ export default function Ecarts({ choisis, questions, echelle }: Props) {
           const max = Math.max(...connues);
           return (
             <li key={q.id} className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:items-center sm:gap-4">
-              <span className="line-clamp-2">{q.texte}</span>
-              <span className="relative h-8" title={`${q.texte} — ${choisis.map((c, i) => `${c.nom} : ${vals[i] === null ? 'inconnue' : echelle[String(vals[i])]}`).join(' ; ')}`}>
+              <span className="line-clamp-2">
+                <span className="font-semibold">A</span> {q.pole_a} <span className="text-muted-foreground">ou</span> <span className="font-semibold">B</span> {q.pole_b}
+              </span>
+              <span className="relative h-8" title={`${titreEnjeu(q)} — ${choisis.map((c, i) => `${c.nom} : ${vals[i] === null ? 'inconnue' : libellePosition(vals[i], q)}`).join(' ; ')}`}>
                 {[-2, -1, 0, 1, 2].map((t) => (
                   <span key={t} className="absolute inset-y-1 w-px" style={{ left: x(t), background: t === 0 ? 'var(--viz-axe)' : 'var(--viz-grille)' }} />
                 ))}
@@ -104,13 +99,13 @@ export default function Ecarts({ choisis, questions, echelle }: Props) {
       <div aria-hidden="true" className="mt-2 grid text-[0.65rem] text-muted-foreground sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-4">
         <span />
         <span className="flex justify-between px-[6%]">
-          <span>{echelle['-2']}</span>
-          <span>{echelle['2']}</span>
+          <span>← pôle A nettement</span>
+          <span>pôle B nettement →</span>
         </span>
       </div>
       {lignes.length > PREMIERES && (
         <button type="button" className="brut-control brut-focus mt-4 bg-background px-3 py-1.5 text-sm" onClick={() => setTout((t) => !t)} aria-expanded={tout}>
-          {tout ? `Ne montrer que les ${PREMIERES} plus grands écarts` : `Voir les ${lignes.length} affirmations`}
+          {tout ? `Ne montrer que les ${PREMIERES} plus grands écarts` : `Voir les ${lignes.length} enjeux`}
         </button>
       )}
     </Figure>

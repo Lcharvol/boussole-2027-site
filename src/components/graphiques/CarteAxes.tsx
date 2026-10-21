@@ -8,7 +8,8 @@ import Figure from './Figure';
 interface Props {
   carte: Carte;
   noms: Record<string, string>;
-  textes: Record<string, string>;
+  /** Pôles de chaque enjeu, pour décrire les axes. */
+  poles: Record<string, { pole_a: string; pole_b: string }>;
   reponses: Record<string, number | null>;
 }
 
@@ -16,7 +17,7 @@ const L = 400;
 const H = 360;
 const M = 28;
 
-export default function CarteAxes({ carte, noms, textes, reponses }: Props) {
+export default function CarteAxes({ carte, noms, poles, reponses }: Props) {
   const vous = projeter(reponses, carte);
   const pts = Object.entries(carte.coords);
   const xs = [...pts.map(([, p]) => p[0]), ...(vous ? [vous[0]] : [])];
@@ -71,11 +72,15 @@ export default function CarteAxes({ carte, noms, textes, reponses }: Props) {
 
   const pct = (v: number) => `${Math.round(v * 100)} %`;
   const decrire = (i: 0 | 1) => {
+    // Un enjeu de poids positif va vers son pôle B du côté positif de l'axe ; un enjeu de poids négatif,
+    // vers son pôle A. On décrit chaque côté par les deux enjeux qui pèsent le plus (un de chaque signe).
     const m = questionsMarquantes(carte.axes[i]);
+    const p = poles[m.positif[0]];
+    const n = poles[m.negatif[0]];
     return (
       <>
-        {i === 0 ? 'Vers la droite du graphique' : 'Vers le haut'}, plutôt d'accord avec « {textes[m.positif[0]]} » ; {i === 0 ? 'vers la gauche' : 'vers le bas'}, plutôt d'accord
-        avec « {textes[m.negatif[0]]} ».
+        {i === 0 ? 'Vers la droite du graphique' : 'Vers le haut'}, plutôt « {p.pole_b} » et « {n.pole_a} » ; {i === 0 ? 'vers la gauche' : 'vers le bas'}, plutôt « {p.pole_a} » et
+        « {n.pole_b} ».
       </>
     );
   };

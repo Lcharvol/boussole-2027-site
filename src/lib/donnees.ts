@@ -3,7 +3,8 @@
 import brut from '../generated/donnees.json';
 import photosBrut from '../data/photos.json';
 import type { Candidat, Donnees, Enjeu, Photos } from './types';
-import { libellePosition } from './axe';
+import { libellePosition, titreEnjeu } from './axe';
+export { titreEnjeu };
 
 const donnees = brut as unknown as Donnees;
 export const meta = donnees.meta;

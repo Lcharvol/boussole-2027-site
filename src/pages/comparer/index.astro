@@ -1,15 +1,16 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Comparateur from '../../components/Comparateur';
-import { candidats, lien, listeQuestions, photos, questions, themes } from '../../lib/donnees';
+import { candidats, lien, listeEnjeux, photos, themes } from '../../lib/donnees';
 const liste = candidats.map((c) => ({ slug: c.slug, nom: c.nom }));
+const enjeux = listeEnjeux.map(({ id, theme, pole_a, pole_b }) => ({ id, theme, pole_a, pole_b }));
 ---
 
-<Base titre="Comparer" description="Comparez côte à côte les positions de deux ou trois candidats à la présidentielle 2027, question par question, avec les citations et les sources." large>
+<Base titre="Comparer" description="Comparez côte à côte les positions de deux ou trois candidats à la présidentielle 2027, enjeu par enjeu, avec les citations et les sources." large>
   <h1 class="text-4xl font-bold">Comparer des candidats</h1>
-  <p class="mt-3 max-w-2xl text-muted-foreground">Les positions de deux ou trois candidats, côte à côte, sur les {listeQuestions.length} affirmations. Chaque position renvoie à sa citation et à sa source.</p>
+  <p class="mt-3 max-w-2xl text-muted-foreground">Les positions de deux ou trois candidats, côte à côte, sur les {listeEnjeux.length} enjeux, placées entre les deux options de chacun. Chaque position renvoie à sa citation et à sa source.</p>
   <div class="mt-8">
-    <Comparateur client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} base={lien()} photos={photos} liste={liste} />
+    <Comparateur client:load enjeux={enjeux} themes={themes} base={lien()} photos={photos} liste={liste} />
   </div>
-  <noscript><p class="brut-surface mt-6 bg-card p-4">Le comparateur a besoin de JavaScript. Sans JavaScript, consultez les <a class="lien" href={lien('candidats/')}>fiches des candidats</a> ou les <a class="lien" href={lien('questions/')}>pages par question</a>.</p></noscript>
+  <noscript><p class="brut-surface mt-6 bg-card p-4">Le comparateur a besoin de JavaScript. Sans JavaScript, consultez les <a class="lien" href={lien('candidats/')}>fiches des candidats</a> ou les <a class="lien" href={lien('questions/')}>pages par enjeu</a>.</p></noscript>
 </Base>

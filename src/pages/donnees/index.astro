@@ -14,15 +14,16 @@ const taille = (f: string) => {
   }
 };
 const fichiers = [
-  { f: 'boussole-2027.json', d: 'Tout : questions, thèmes, échelle, fiches complètes des candidats (positions, citations, sources, confiance, relecture) et métadonnées.' },
-  { f: 'positions.csv', d: 'Une ligne par candidat et par question : valeur, confiance, relecture, date, source, citation, résumé.' },
+  { f: 'boussole-2027.json', d: 'Tout : enjeux (pôles, contexte, formulations), thèmes, échelle, fiches complètes des candidats (positions, citations, sources, confiance, relecture) et métadonnées.' },
+  { f: 'positions.csv', d: 'Une ligne par candidat et par enjeu : valeur, confiance, relecture, date, source, citation, résumé.' },
   { f: 'candidats.csv', d: 'Une ligne par candidat : parti, statut, programme, date de mise à jour, notes.' },
-  { f: 'questions.csv', d: 'Une ligne par affirmation : identifiant, thème, mode, texte.' },
+  { f: 'enjeux.csv', d: 'Une ligne par enjeu : identifiant, thème, pôle A, pôle B, contexte.' },
+  { f: 'variantes.csv', d: 'Une ligne par formulation posée dans le test : identifiant, enjeu, question, option A, option B, validée par un humain.' },
   { f: 'calcul.json', d: 'Version allégée utilisée pour le calcul dans le navigateur : valeurs et confiance seulement.' },
 ];
 ---
 
-<Base titre="Données ouvertes" description="Téléchargez les données de la Boussole présidentielle 2027 : questions, positions des candidats, citations et sources, en JSON et en CSV.">
+<Base titre="Données ouvertes" description="Téléchargez les données de la Boussole présidentielle 2027 : enjeux, positions des candidats, citations et sources, en JSON et en CSV.">
   <h1 class="text-4xl font-bold">Données ouvertes</h1>
   <p class="mt-4 max-w-2xl text-muted-foreground">
     Les fichiers sont générés à chaque construction du site depuis le <a class="lien" href={meta.depot}>dépôt du skill</a>, source unique des données{meta.commit && <> (version <a class="lien font-mono" href={`${meta.depot}/commit/${meta.commit}`}>{meta.commit.slice(0, 7)}</a>{meta.date_commit && <> du {dateFr(meta.date_commit)}</>})</>}. Ils sont sous licence MIT, comme le dépôt. Les CSV sont encodés en UTF-8, séparés par des virgules.
@@ -41,10 +42,10 @@ const fichiers = [
   <section class="prose-b mt-12">
     <h2>Format</h2>
     <ul>
-      <li><code>valeur</code> : de -2 (pas du tout d'accord) à 2 (tout à fait d'accord) ; vide si la position est inconnue.</li>
+      <li><code>valeur</code> : position entre les deux pôles de l'enjeu, de -2 (pôle A nettement) à 2 (pôle B nettement), 0 entre les deux ; vide si la position est inconnue. Données au format 2 (dilemmes) : les valeurs des anciennes copies (format 1, « d'accord / pas d'accord ») n'ont pas le même sens pour la moitié des enjeux.</li>
       <li><code>confiance</code> : <code>programme</code>, <code>declaration</code> ou <code>deduite</code>.</li>
       <li><code>relu</code> : <code>true</code> si un humain a ouvert la source et vérifié la citation, le résumé et la valeur.</li>
     </ul>
-    <p>Le format complet des fiches est décrit dans <a href={`${meta.depot}/blob/main/skills/boussole-presidentielle-2027/data/candidats/_FORMAT.md`}>_FORMAT.md</a>. Il n'y a aucune donnée sur les visiteurs du site : il n'en collecte pas.</p>
+    <p>Le format complet des enjeux et des fiches est décrit dans <a href={`${meta.depot}/blob/${meta.commit ?? 'main'}/skills/boussole-presidentielle-2027/data/FORMAT.md`}>FORMAT.md</a>. Il n'y a aucune donnée sur les visiteurs du site : il n'en collecte pas.</p>
   </section>
 </Base>
