@@ -3,6 +3,10 @@ import { marked } from 'marked';
 import Base from '../../layouts/Base.astro';
 import audit from '../../generated/audit.md?raw';
 import { dateFr, lien, meta } from '../../lib/donnees';
+import { lireAudit } from '../../lib/audit';
+import { EquilibreFormulations, RatiosTiers } from '../../components/graphiques/Audit';
+
+const chiffres = lireAudit(audit);
 
 // Le rapport d'audit est la sortie brute de scripts/audit_biais.py, exécuté au build sur les données publiées.
 // On décale les titres d'un niveau (le titre de la page est le seul h1).
@@ -52,6 +56,13 @@ const skill = `${meta.depot}/blob/${meta.commit ?? 'main'}/skills/boussole-presi
     <h2 id="audit">Audit de neutralité</h2>
     <p>Le script <a href={`${skill}/scripts/audit_biais.py`}>audit_biais.py</a> vérifie que le calcul et les formulations ne favorisent pas mécaniquement un camp. Il calcule un axe à partir des seules positions des candidats (sans aucune étiquette), mesure le sens de chaque affirmation sur cet axe, puis passe des milliers de profils sans opinion dans le calcul : si le calcul est neutre, chaque candidat classé doit sortir premier aussi souvent qu'attendu.</p>
     <p>Le rapport ci-dessous est la sortie brute du script, <strong>recalculée à chaque construction du site</strong> sur les données publiées{meta.commit && <> (version <a href={`${meta.depot}/commit/${meta.commit}`}><code>{meta.commit.slice(0, 7)}</code></a>{meta.date_commit && <> du {dateFr(meta.date_commit)}</>})</>}. Les mots « gauche », « centre » et « droite » y désignent seulement les tiers de l'axe calculé.</p>
+    {chiffres && (
+      <div class="not-prose mt-6 grid gap-6">
+        <RatiosTiers chiffres={chiffres} />
+        <EquilibreFormulations chiffres={chiffres} />
+      </div>
+    )}
+    <h3>Rapport complet</h3>
     {auditHtml ? (
       <div class="brut-panel mt-6 bg-card p-4 sm:p-6" set:html={auditHtml} />
     ) : (

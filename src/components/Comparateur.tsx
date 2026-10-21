@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { CONFIANCE, type Candidat, type Photos, type Question } from '@/lib/types';
 import { PortraitMini } from './Portrait';
+import Ecarts from './graphiques/Ecarts';
 
 interface Props {
   questions: Question[];
@@ -105,6 +106,9 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
       )}
       {actifs.length >= 2 && candidats && (
         <div className="mt-8">
+          <div className="mb-8">
+            <Ecarts choisis={actifs.map((s) => candidats[s])} questions={questions.filter((q) => !theme || q.theme === theme)} echelle={echelle} />
+          </div>
           <p aria-live="polite" className="text-sm text-muted-foreground">
             {qs.length} question{qs.length > 1 ? 's' : ''} affichée{qs.length > 1 ? 's' : ''}
           </p>

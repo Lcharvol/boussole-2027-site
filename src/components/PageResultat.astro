@@ -1,7 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import Resultat from './Resultat';
-import { lien, listeQuestions, photos, questions, themes } from '../lib/donnees';
+import { candidats, lien, listeQuestions, photos, questions, themes } from '../lib/donnees';
+import { calculerCarte } from '../lib/acp';
+
+// Axes de la carte « vous et les candidats », calculés au build à partir des positions des candidats.
+const carte = calculerCarte(candidats, listeQuestions.map((q) => q.id));
 
 interface Props { mode?: 'rapide' | 'moyen' | 'long' }
 const { mode } = Astro.props;
@@ -18,7 +22,7 @@ const nb = { rapide: 8, moyen: 24, long: 40 };
   <link slot="head" rel="preload" href={lien('donnees/calcul.json')} as="fetch" crossorigin="anonymous" />
   <h1 class="text-4xl font-bold">Votre résultat</h1>
   <div class="mt-6">
-    <Resultat client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} photos={photos} />
+    <Resultat client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} photos={photos} carte={carte} />
   </div>
   <noscript><p class="brut-surface mt-6 bg-card p-4">Le résultat est calculé dans votre navigateur et nécessite JavaScript.</p></noscript>
 </Base>
