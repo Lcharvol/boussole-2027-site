@@ -1,0 +1,134 @@
+---
+import Base from '../layouts/Base.astro';
+import Portrait from '../components/Portrait.astro';
+import { candidats, dateFr, lien, meta, themes } from '../lib/donnees';
+import { calendrier } from '../data/calendrier';
+import { MODES } from '../lib/types';
+
+const aujourdhui = new Date().toISOString().slice(0, 10);
+const prochaines = calendrier.filter((e) => e.date && e.date >= aujourdhui).slice(0, 3);
+
+const differences = [
+  {
+    titre: 'Chaque position a sa citation',
+    texte: `Les ${meta.nb_positions} positions renseignées s'appuient sur une phrase exacte, recopiée depuis la source, avec le lien, la date et un niveau de confiance. ${meta.nb_positions_relues === meta.nb_positions ? 'Toutes ont été relues par un humain.' : `${meta.nb_positions_relues} ont été relues par un humain.`}`,
+  },
+  {
+    titre: 'La neutralité est mesurée, pas affirmée',
+    texte: "Un audit publié teste le calcul avec des milliers de profils au hasard et vérifie qu'aucun camp n'est avantagé mécaniquement. Les chiffres sont recalculés à chaque mise à jour des données.",
+  },
+  {
+    titre: 'Une marge, pas un faux classement',
+    texte: "Chaque score est donné avec sa marge d'incertitude. Quand deux candidats sont trop proches pour être départagés, le résultat le dit.",
+  },
+  {
+    titre: 'On ne devine jamais',
+    texte: "Sans source, la position reste inconnue et c'est affiché. La part des questions couvertes est indiquée pour chaque candidat.",
+  },
+  {
+    titre: 'Rien ne quitte votre appareil',
+    texte: 'Le calcul se fait dans votre navigateur. Aucun compte, aucun cookie, aucun traceur, aucune statistique sur les réponses.',
+  },
+  {
+    titre: 'Tout est ouvert',
+    texte: 'Questions, positions, sources et calcul sont publics et téléchargeables. Une erreur ? Chacun peut la signaler, source à l’appui.',
+  },
+];
+---
+
+<Base titre="Accueil" large>
+  <section class="grid items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
+    <div>
+      <p class="brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">Présidentielle des 18 avril et 2 mai 2027</p>
+      <h1 class="mt-4 text-4xl font-bold leading-[1.05] sm:text-6xl">De quels programmes êtes-vous proche ?</h1>
+      <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+        {meta.nb_questions} affirmations sur {Object.keys(themes).length} grands thèmes, comparées aux positions de {meta.nb_candidats} candidats déclarés ou pressentis. Chaque position est sourcée par une citation exacte et relue par un humain.
+      </p>
+      <div class="mt-7 flex flex-wrap gap-4">
+        <a href={lien('test/')} class="brut-control brut-focus inline-flex h-12 items-center bg-primary px-6 text-base text-primary-foreground">Faire le test</a>
+        <a href={lien('questions/')} class="brut-control brut-focus inline-flex h-12 items-center bg-background px-6 text-base">Voir qui pense quoi</a>
+      </div>
+      <p class="mt-6 text-sm font-semibold">Proximité avec des programmes, pas une consigne de vote.</p>
+    </div>
+    <ul class="grid gap-4" aria-label="Les trois modes du test">
+      {MODES.map((m) => (
+        <li class="brut-panel bg-card p-4">
+          <p class="flex items-baseline justify-between gap-3">
+            <span class="font-serif text-xl font-bold">Mode {m.titre.toLowerCase()}</span>
+            <span class="text-sm font-semibold text-muted-foreground">{m.id === 'rapide' ? 8 : m.id === 'moyen' ? 24 : 40} questions · {m.duree}</span>
+          </p>
+          <p class="mt-1 text-sm text-muted-foreground">{m.fiabilite}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mt-20" aria-labelledby="titre-diff">
+    <h2 id="titre-diff" class="text-3xl font-bold">Ce qui distingue cette boussole</h2>
+    <p class="mt-3 max-w-2xl text-muted-foreground">Toutes les boussoles électorales ne se valent pas. Voici ce qu'on peut vérifier ici, et ce qu'il est utile de demander à n'importe quel outil de ce genre.</p>
+    <ul class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {differences.map((d) => (
+        <li class="brut-panel bg-card p-5">
+          <h3 class="font-sans text-lg font-bold">{d.titre}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{d.texte}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="mt-6"><a class="lien font-semibold" href={lien('methode/')}>Lire la méthode et l'audit de neutralité</a></p>
+  </section>
+
+  <section class="mt-20" aria-labelledby="titre-etapes">
+    <h2 id="titre-etapes" class="text-3xl font-bold">Comment ça marche</h2>
+    <ol class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        ['Choisissez un mode', '8, 24 ou 40 questions. On peut passer au mode supérieur à la fin, sans recommencer.'],
+        ['Répondez thème par thème', 'De « tout à fait d’accord » à « pas du tout d’accord ». On peut passer une question.'],
+        ['Indiquez vos priorités', 'Trois thèmes au plus comptent double (ou triple s’ils sont décisifs pour vous).'],
+        ['Lisez les sources', 'Classement avec marge, puis accords et désaccords, chacun avec la citation et le lien.'],
+      ].map(([t, d], i) => (
+        <li class="brut-surface bg-card p-5">
+          <span class="flex size-9 items-center justify-center rounded-full border-2 border-border bg-primary font-bold text-primary-foreground" aria-hidden="true">{i + 1}</span>
+          <h3 class="mt-3 font-sans font-bold">{t}</h3>
+          <p class="mt-1 text-sm text-muted-foreground">{d}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="mt-20" aria-labelledby="titre-candidats">
+    <h2 id="titre-candidats" class="text-3xl font-bold">Les {candidats.length} candidats suivis</h2>
+    <p class="mt-3 max-w-2xl text-muted-foreground">Par ordre alphabétique du nom de famille. La liste officielle sera arrêtée par le Conseil constitutionnel en mars 2027 ; d'ici là, la boussole suit les candidatures déclarées ou pressenties.</p>
+    <ul class="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-5 lg:grid-cols-9">
+      {candidats.map((c) => (
+        <li>
+          <a href={lien(`candidats/${c.slug}/`)} class="group block text-center">
+            <Portrait slug={c.slug} nom={c.nom} taille="md" />
+            <span class="mt-2 block text-xs font-semibold leading-tight group-hover:underline">{c.nom}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="mt-6"><a class="lien font-semibold" href={lien('candidats/')}>Toutes les fiches, avec crédits photo</a></p>
+  </section>
+
+  <section class="mt-20 grid gap-6 lg:grid-cols-2">
+    <div class="brut-panel bg-card p-6">
+      <h2 class="text-2xl font-bold">Prochaines étapes</h2>
+      <ul class="mt-4 grid gap-3">
+        {prochaines.map((e) => (
+          <li class="flex gap-4">
+            <span class="w-28 shrink-0 text-sm font-bold">{dateFr(e.date)}</span>
+            <span class="text-sm">{e.titre}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-5"><a class="lien font-semibold" href={lien('calendrier/')}>Calendrier complet et sources officielles</a></p>
+    </div>
+    <div class="brut-panel bg-card p-6">
+      <h2 class="text-2xl font-bold">Aussi dans Claude</h2>
+      <p class="mt-3 text-sm text-muted-foreground">La boussole existe aussi comme skill pour Claude : même questionnaire, mêmes données, même calcul, en conversation. Vous pouvez aussi lui demander la position d'un candidat sur un sujet.</p>
+      <p class="mt-5"><a class="lien font-semibold" href={lien('skill-claude/')}>Installer le skill</a></p>
+      <p class="mt-2"><a class="lien font-semibold" href={lien('classe/')}>Utiliser la boussole en classe</a></p>
+    </div>
+  </section>
+</Base>

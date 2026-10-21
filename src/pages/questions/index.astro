@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import { candidats, lien, questionsParTheme } from '../../lib/donnees';
+
+const repartition = (qid: string) => {
+  const r = { pour: 0, neutre: 0, contre: 0, inconnu: 0 };
+  for (const c of candidats) {
+    const v = c.positions[qid]?.valeur;
+    if (v == null) r.inconnu++;
+    else if (v > 0) r.pour++;
+    else if (v < 0) r.contre++;
+    else r.neutre++;
+  }
+  return r;
+};
+---
+
+<Base titre="Qui pense quoi" description="Les 40 affirmations de la Boussole présidentielle 2027 et la position de chaque candidat, avec les citations et les sources.">
+  <h1 class="text-4xl font-bold">Qui pense quoi</h1>
+  <p class="mt-4 max-w-2xl text-muted-foreground">
+    Une page par affirmation : la position de chaque candidat, avec la citation exacte, la source et le niveau de confiance. Les chiffres indiquent combien de candidats sont plutôt d'accord, partagés, plutôt pas d'accord, ou de position inconnue.
+  </p>
+  {questionsParTheme.map((t) => (
+    <section class="mt-10" aria-labelledby={`t-${t.theme}`}>
+      <h2 id={`t-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
+      <ul class="mt-4 grid gap-3">
+        {t.questions.map((q) => {
+          const r = repartition(q.id);
+          return (
+            <li class="brut-surface bg-card p-4">
+              <a class="lien font-semibold" href={lien(`questions/${q.id}/`)}>{q.texte}</a>
+              <p class="mt-2 text-xs text-muted-foreground">
+                {r.pour} d'accord · {r.neutre} partagé{r.neutre > 1 ? 's' : ''} · {r.contre} pas d'accord · {r.inconnu} position{r.inconnu > 1 ? 's' : ''} inconnue{r.inconnu > 1 ? 's' : ''} · mode {q.niveau}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ))}
+</Base>

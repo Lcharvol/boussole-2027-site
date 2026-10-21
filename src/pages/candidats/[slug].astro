@@ -1,0 +1,63 @@
+---
+import Base from '../../layouts/Base.astro';
+import Portrait from '../../components/Portrait.astro';
+import Position from '../../components/Position.astro';
+import { candidats, candidatsRetires, dateFr, lien, listeQuestions, positionsConnues, questionsParTheme } from '../../lib/donnees';
+import { CONFIANCE } from '../../lib/types';
+import type { Candidat } from '../../lib/types';
+
+export function getStaticPaths() {
+  return [...candidats, ...candidatsRetires].map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props as { c: Candidat };
+const connues = positionsConnues(c);
+const parConfiance = Object.keys(CONFIANCE).map((k) => ({
+  k,
+  n: listeQuestions.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.confiance === k).length,
+}));
+const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.relu).length;
+---
+
+<Base titre={c.nom} description={`Positions de ${c.nom} (${c.parti}) sur les 40 questions de la Boussole présidentielle 2027, avec les citations et les sources.`}>
+  <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('candidats/')}>Candidats</a> <span aria-hidden="true">›</span> {c.nom}</nav>
+  <header class="mt-6 flex flex-col gap-6 sm:flex-row">
+    <Portrait slug={c.slug} nom={c.nom} taille="lg" credit />
+    <div class="min-w-0">
+      <h1 class="text-4xl font-bold">{c.nom}</h1>
+      <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt class="font-semibold">Parti</dt><dd>{c.parti}</dd>
+        <dt class="font-semibold">Statut</dt><dd>{c.statut}</dd>
+        <dt class="font-semibold">Programme</dt>
+        <dd>{c.programme ?? 'non précisé'}{c.programme_url && <> · <a class="lien" href={c.programme_url}>consulter le programme<span class="sr-only"> (site externe)</span></a></>}</dd>
+        <dt class="font-semibold">Positions connues</dt><dd>{connues} sur {listeQuestions.length} ({relues} relues par un humain)</dd>
+        <dt class="font-semibold">Confiance</dt><dd>{parConfiance.map((p) => `${p.n} ${CONFIANCE[p.k].libelle.toLowerCase()}`).join(' · ')}</dd>
+        {c.mis_a_jour && <><dt class="font-semibold">Fiche mise à jour</dt><dd>{dateFr(c.mis_a_jour)}</dd></>}
+      </dl>
+      {c.notes && <p class="mt-4 text-sm leading-relaxed text-muted-foreground">{c.notes}</p>}
+    </div>
+  </header>
+
+  <nav aria-label="Thèmes" class="mt-10">
+    <ul class="flex flex-wrap gap-2 text-sm">
+      {questionsParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#${t.theme}`}>{t.libelle}</a></li>)}
+    </ul>
+  </nav>
+
+  {questionsParTheme.map((t) => (
+    <section id={t.theme} class="mt-12 scroll-mt-6" aria-labelledby={`titre-${t.theme}`}>
+      <h2 id={`titre-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
+      <ul class="mt-5 grid gap-5">
+        {t.questions.map((q) => (
+          <li>
+            <Position position={c.positions[q.id]} titre={q.texte} titreHref={lien(`questions/${q.id}/`)} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <p class="mt-12 text-sm text-muted-foreground">
+    Une position est fausse ou un programme vient de sortir ? <a class="lien" href={`https://github.com/Lcharvol/boussole-presidentielle-2027/issues/new?title=${encodeURIComponent(`Fiche ${c.nom}`)}`}>Signalez-le avec la source</a>.
+    <a class="lien" href={lien(`comparer/?c=${c.slug}`)}>Comparer avec d'autres candidats</a>.
+  </p>
+</Base>

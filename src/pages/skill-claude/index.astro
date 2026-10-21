@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import { lien, meta } from '../../lib/donnees';
+---
+
+<Base titre="Le skill Claude" description="Installer la Boussole présidentielle 2027 comme plugin ou comme skill pour Claude : même questionnaire, mêmes données sourcées, même calcul, en conversation.">
+  <article class="prose-b">
+    <h1 class="text-4xl font-bold">Le skill Claude</h1>
+    <p>La boussole existe aussi comme <a href="https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview">skill</a> pour Claude, l'assistant d'Anthropic. Mêmes questions, mêmes fiches sourcées, même calcul que sur ce site : Claude vous pose les questions en conversation, calcule la proximité avec <code>score.py</code> et explique les accords et désaccords, sources à l'appui.</p>
+    <p>Vous pouvez aussi lui demander « quelle est la position de X sur Y ? » : il répond à partir des fiches, en citant les sources.</p>
+
+    <h2>Claude Code : plugin</h2>
+    <p>Le dépôt est aussi une marketplace de plugins. Dans Claude Code :</p>
+    <pre><code>/plugin marketplace add Lcharvol/boussole-presidentielle-2027
+/plugin install boussole-presidentielle-2027@lcharvol-skills</code></pre>
+
+    <h2>Claude Code : skill seul</h2>
+    <p>Copiez le dossier du skill dans vos skills :</p>
+    <pre><code>git clone https://github.com/Lcharvol/boussole-presidentielle-2027 /tmp/boussole
+cp -r /tmp/boussole/skills/boussole-presidentielle-2027 ~/.claude/skills/</code></pre>
+
+    <h2>Claude.ai</h2>
+    <p>Téléchargez le dépôt, zippez le dossier <code>skills/boussole-presidentielle-2027</code>, puis ajoutez-le dans <em>Settings → Capabilities → Skills</em>.</p>
+
+    <h2>Ensuite</h2>
+    <p>Demandez simplement : « Pour qui voter en 2027 ? » ou « Fais-moi le test de la présidentielle ». Claude vous propose le mode rapide, moyen ou long, pose les affirmations telles quelles, puis vous demande vos thèmes prioritaires.</p>
+
+    <h2>Confidentialité</h2>
+    <p>Vos réponses restent dans votre conversation avec Claude. Le calcul se fait localement avec les fichiers du plugin : les réponses sont transmises au script de calcul par l'entrée standard, sans être écrites dans un fichier. Le skill ne demande ni nom ni adresse et n'envoie rien à l'auteur.</p>
+
+    <p>Code source, fiches et méthode : <a href={meta.depot}>{meta.depot.replace('https://', '')}</a>{meta.version_plugin && <> (version {meta.version_plugin})</>}. Le site et le skill partagent les mêmes données : <a href={lien('methode/')}>voir la méthode</a>.</p>
+  </article>
+</Base>

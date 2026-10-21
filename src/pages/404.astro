@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import { lien } from '../lib/donnees';
+---
+
+<Base titre="Page introuvable" noindex>
+  <h1 class="text-4xl font-bold">Page introuvable</h1>
+  <p class="mt-4 text-muted-foreground">Cette page n'existe pas ou a changé d'adresse.</p>
+  <p class="mt-6 flex flex-wrap gap-4">
+    <a href={lien()} class="brut-control brut-focus inline-flex h-11 items-center bg-primary px-5 text-primary-foreground">Accueil</a>
+    <a href={lien('test/')} class="brut-control brut-focus inline-flex h-11 items-center bg-background px-5">Faire le test</a>
+  </p>
+</Base>

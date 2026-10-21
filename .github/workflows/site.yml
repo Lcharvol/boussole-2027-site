@@ -1,0 +1,107 @@
+name: Site
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Reconstruction quand les données du skill changent : déclenchée par le dépôt du skill
+  # (repository_dispatch), et chaque jour par sécurité.
+  repository_dispatch:
+    types: [donnees-mises-a-jour]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+  BOUSSOLE_SKILL_DIR: .donnees/skill
+
+jobs:
+  verifier:
+    name: Build, concordance, liens, accessibilité
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Données du skill (source unique, branche main)
+        uses: actions/checkout@v4
+        with:
+          repository: Lcharvol/boussole-presidentielle-2027
+          ref: main
+          path: .donnees/skill
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build (données, audit de neutralité, images de partage, vérification des types)
+        run: npm run build
+
+      - name: Concordance du calcul TypeScript avec score.py
+        run: npm run test:concordance
+        env:
+          CONCORDANCE_PROFILS: "100"
+
+      - name: Liens internes
+        run: npm run liens
+
+      - name: Accessibilité (Lighthouse, thème clair)
+        run: npx lhci autorun
+
+      - name: Accessibilité (Lighthouse, thème sombre)
+        run: npx lhci autorun --config=lighthouserc-sombre.json
+
+      - name: Résumé
+        if: always()
+        run: |
+          {
+            echo "### Données"
+            node -e "const m=require('./src/generated/donnees.json').meta;console.log('Commit du skill : '+m.commit+' — '+m.nb_candidats+' candidats, '+m.nb_positions+' positions, '+m.nb_positions_relues+' relues.')"
+          } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Rapports Lighthouse
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse
+          path: .lighthouseci/
+          if-no-files-found: ignore
+
+      - name: Préparer la publication
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deployer:
+    name: Déployer sur GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: verifier
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4

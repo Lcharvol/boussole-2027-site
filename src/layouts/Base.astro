@@ -1,0 +1,149 @@
+---
+import '../styles/global.css';
+import { dateFr, lien, meta } from '../lib/donnees';
+
+interface Props {
+  titre: string;
+  description?: string;
+  image?: string;
+  /** Exclut la page de l'indexation (pages de résultat). */
+  noindex?: boolean;
+  large?: boolean;
+}
+const {
+  titre,
+  description = 'Une boussole électorale neutre pour la présidentielle 2027 : 40 affirmations, 25 candidats, chaque position sourcée par une citation exacte relue par un humain. Calcul dans votre navigateur, aucune donnée collectée.',
+  image = 'og/generique.png',
+  noindex = false,
+  large = false,
+} = Astro.props;
+const titreComplet = titre === 'Accueil' ? 'Boussole présidentielle 2027' : `${titre} · Boussole présidentielle 2027`;
+const canonique = new URL(Astro.url.pathname, Astro.site);
+const imageUrl = new URL(lien(image), Astro.site);
+const chemin = Astro.url.pathname;
+
+const nav = [
+  { href: 'test/', texte: 'Faire le test' },
+  { href: 'candidats/', texte: 'Candidats' },
+  { href: 'questions/', texte: 'Qui pense quoi' },
+  { href: 'comparer/', texte: 'Comparer' },
+  { href: 'methode/', texte: 'Méthode' },
+  { href: 'calendrier/', texte: 'Calendrier' },
+  { href: 'classe/', texte: 'En classe' },
+  { href: 'skill-claude/', texte: 'Skill Claude' },
+];
+const actif = (href: string) => chemin.startsWith(lien(href));
+---
+
+<!doctype html>
+<html lang="fr" data-brut-palette="paper" data-brut-strength="solid" data-brut-radius="cut">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titreComplet}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonique} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" href={lien('favicon.svg')} type="image/svg+xml" />
+    <meta name="theme-color" content="#fbf9f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1f1b16" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Boussole présidentielle 2027" />
+    <meta property="og:title" content={titreComplet} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonique} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>
+      // Thème clair/sombre : choix mémorisé dans ce navigateur seulement (localStorage, pas de cookie).
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <a href="#contenu" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 brut-control bg-primary text-primary-foreground px-4 py-2">Aller au contenu</a>
+    <header class="border-b-[length:var(--brut-border)] border-border bg-card">
+      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+        <a href={lien()} class="flex items-center gap-2 font-serif text-lg font-bold leading-tight" aria-label="Boussole 2027, accueil">
+          <svg aria-hidden="true" viewBox="0 0 32 32" class="size-8 shrink-0"><circle cx="16" cy="16" r="14" fill="var(--card)" stroke="currentColor" stroke-width="2.5"></circle><path d="M16 5 L20 16 L16 27 L12 16 Z" fill="var(--primary)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path><circle cx="16" cy="16" r="2" fill="currentColor"></circle></svg>
+          <span>Boussole <span class="whitespace-nowrap">2027</span></span>
+        </a>
+        <nav aria-label="Navigation principale" class="ml-auto hidden lg:block">
+          <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
+            {nav.map((n) => (
+              <li>
+                <a href={lien(n.href)} aria-current={actif(n.href) ? 'page' : undefined} class:list={['brut-quiet block px-2.5 py-1.5', actif(n.href) && 'bg-muted !border-border']}>{n.texte}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <button type="button" id="bouton-theme" class="brut-control brut-focus ml-auto bg-background p-2 lg:ml-1" aria-label="Basculer le thème clair ou sombre" aria-pressed="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"></path></svg>
+        </button>
+        <details class="relative lg:hidden" id="menu-mobile">
+          <summary class="brut-control brut-focus list-none bg-background px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">Menu</summary>
+          <nav aria-label="Navigation principale (mobile)" class="brut-panel absolute right-0 z-40 mt-3 w-64 bg-card p-2">
+            <ul class="grid gap-1 font-semibold">
+              {nav.map((n) => (
+                <li><a href={lien(n.href)} aria-current={actif(n.href) ? 'page' : undefined} class:list={['brut-quiet block px-3 py-2.5', actif(n.href) && 'bg-muted']}>{n.texte}</a></li>
+              ))}
+            </ul>
+          </nav>
+        </details>
+      </div>
+    </header>
+
+    <main id="contenu" tabindex="-1" class:list={['mx-auto w-full px-4 py-8 sm:py-12 outline-none', large ? 'max-w-6xl' : 'max-w-4xl']}>
+      <slot />
+    </main>
+
+    <footer class="mt-16 border-t-[length:var(--brut-border)] border-border bg-card">
+      <div class="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-[2fr_1fr_1fr]">
+        <div class="space-y-3">
+          <p class="font-serif text-base font-bold">Proximité avec des programmes, pas une consigne de vote.</p>
+          <p class="text-muted-foreground">
+            Aucun cookie, aucun traceur, aucun sondage. Vos réponses restent dans votre navigateur.
+            Données : <a class="lien" href={meta.depot}>dépôt du skill</a>{meta.commit && <>, version <a class="lien font-mono" href={`${meta.depot}/commit/${meta.commit}`}>{meta.commit.slice(0, 7)}</a></>}{meta.date_commit && <> du {dateFr(meta.date_commit)}</>}.
+          </p>
+        </div>
+        <nav aria-label="Pages du site">
+          <ul class="grid gap-1.5">
+            <li><a class="lien" href={lien('donnees/')}>Données ouvertes</a></li>
+            <li><a class="lien" href={lien('methode/')}>Méthode et audit</a></li>
+            <li><a class="lien" href={lien('a-propos/')}>À propos, contribuer</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Informations légales">
+          <ul class="grid gap-1.5">
+            <li><a class="lien" href={lien('confidentialite/')}>Confidentialité</a></li>
+            <li><a class="lien" href={lien('mentions-legales/')}>Mentions légales</a></li>
+            <li><a class="lien" href="https://github.com/Lcharvol/boussole-2027-site">Code source (MIT)</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
+    <script is:inline>
+      (function () {
+        var b = document.getElementById('bouton-theme');
+        function maj() { b.setAttribute('aria-pressed', String(document.documentElement.dataset.theme === 'dark')); }
+        maj();
+        b.addEventListener('click', function () {
+          var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+          document.documentElement.dataset.theme = t;
+          try { localStorage.setItem('theme', t); } catch (e) {}
+          maj();
+        });
+        var m = document.getElementById('menu-mobile');
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
+      })();
+    </script>
+  </body>
+</html>
