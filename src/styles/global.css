@@ -79,7 +79,9 @@
     font-family: var(--font-sans);
     -webkit-text-size-adjust: 100%;
   }
+  /* Pied de page collé en bas sur les pages courtes : body en colonne, main extensible (flex: 1). */
   body {
+    min-height: 100vh;
     min-height: 100dvh;
     background-image:
       linear-gradient(var(--site-grid-color) 1px, transparent 1px),
