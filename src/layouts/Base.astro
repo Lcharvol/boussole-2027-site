@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Icone from '../components/Icone';
 import { dateFr, lien, meta } from '../lib/donnees';
 
 interface Props {
@@ -87,12 +88,12 @@ const actif = (href: string) => chemin.startsWith(lien(href));
           </ul>
         </nav>
         <button type="button" id="bouton-theme" class="brut-control brut-focus ml-auto inline-flex h-10 items-center gap-2 bg-background px-2.5 text-sm lg:ml-1" aria-pressed="false">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="icone-lune size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="icone-soleil size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+          <Icone client:idle nom="moon" className="icone-lune" />
+          <Icone client:idle nom="sun" className="icone-soleil" />
           <span class="sr-only">Thème sombre</span>
         </button>
         <details class="relative lg:hidden" id="menu-mobile">
-          <summary class="brut-control brut-focus list-none bg-background px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">Menu</summary>
+          <summary class="brut-control brut-focus flex h-10 list-none items-center gap-1.5 bg-background px-3 text-sm [&::-webkit-details-marker]:hidden"><Icone client:idle nom="menu" taille={18} />Menu</summary>
           <nav aria-label="Navigation principale (mobile)" class="brut-panel absolute right-0 z-40 mt-3 w-64 bg-card p-2">
             <ul class="grid gap-1 font-semibold">
               {nav.map((n) => (
@@ -128,7 +129,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
           <ul class="grid gap-1.5">
             <li><a class="lien" href={lien('confidentialite/')}>Confidentialité</a></li>
             <li><a class="lien" href={lien('mentions-legales/')}>Mentions légales</a></li>
-            <li><a class="lien" href="https://github.com/Lcharvol/boussole-2027-site">Code source (MIT)</a></li>
+            <li><a class="lien inline-flex items-center gap-1.5" href="https://github.com/Lcharvol/boussole-2027-site"><Icone client:visible nom="github" taille={16} />Code source (MIT)</a></li>
           </ul>
         </nav>
       </div>

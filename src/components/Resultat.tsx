@@ -8,6 +8,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { decoder, encoder, type Etat } from '@/lib/partage';
 import { calculer, candidatsActifs, NIVEAU, type Resultat as Res, type ResultatCandidat } from '@/lib/score';
 import { CONFIANCE, NIVEAUX_DU_MODE, type Candidat, type Mode, type Photos, type Question } from '@/lib/types';
+import Icone from './Icone';
 import { PortraitMini } from './Portrait';
 
 interface Props {
@@ -180,6 +181,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
         </p>
       </div>
       <Button variant="outline" size="sm" className="col-span-2 justify-self-start sm:col-span-1" onClick={() => voirDetail(r.slug)}>
+        <Icone nom="search" taille={15} />
         Détail<span className="sr-only"> pour {r.nom}</span>
       </Button>
     </li>
@@ -205,8 +207,9 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           {p.citation && <blockquote className="mt-2 border-l-4 border-primary pl-3 text-sm">« {p.citation} »</blockquote>}
           <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {p.source && (
-              <a className="lien font-semibold text-foreground" href={p.source}>
+              <a className="lien inline-flex items-center gap-1 font-semibold text-foreground" href={p.source}>
                 Source<span className="sr-only"> (site externe)</span>
+                <Icone nom="external-link" taille={13} />
               </a>
             )}
             {p.date_source && <span>{p.date_source}</span>}
@@ -435,9 +438,13 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
             Le lien contient vos réponses, encodées après le « # » : elles ne sont stockées nulle part, mais toute personne qui ouvre le lien les verra.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button onClick={copier}>Copier le lien</Button>
+            <Button onClick={copier}>
+              <Icone nom="copy" taille={16} />
+              Copier le lien
+            </Button>
             {typeof navigator !== 'undefined' && 'share' in navigator && (
               <Button variant="outline" onClick={() => navigator.share({ title: 'Ma boussole présidentielle 2027', url: urlPartage }).catch(() => {})}>
+                <Icone nom="send" taille={16} />
                 Partager…
               </Button>
             )}
@@ -455,8 +462,9 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
                 {SUIVANT[etat.mode]!.map((m) => {
                   const nouvelles = questions.filter((q) => NIVEAUX_DU_MODE[m].includes(q.niveau) && !(q.id in etat.reponses)).length;
                   return (
-                    <a key={m} className="brut-control brut-focus inline-flex h-10 items-center bg-primary px-4 text-sm text-primary-foreground" href={`${base}test/#reprendre=${code}&vers=${m}`}>
+                    <a key={m} className="brut-control brut-focus inline-flex h-10 items-center gap-2 bg-primary px-4 text-sm text-primary-foreground" href={`${base}test/#reprendre=${code}&vers=${m}`}>
                       Passer au mode {m} (+{nouvelles} questions)
+                      <Icone nom="arrow-right" taille={16} />
                     </a>
                   );
                 })}
@@ -465,19 +473,26 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">Vous avez répondu au mode le plus complet ({NB.long} questions).</p>
           )}
-          <p className="mt-4 text-sm">
-            <a className="lien" href={`${base}test/`}>
-              Refaire le test
-            </a>{' '}
-            ·{' '}
-            <a className="lien" href={`${base}comparer/?c=${res.classement.slice(0, 3).map((r) => r.slug).join(',')}`}>
-              Comparer les premiers côte à côte
-            </a>{' '}
-            ·{' '}
-            <a className="lien" href={`${base}methode/`}>
-              Comment le score est calculé
-            </a>
-          </p>
+          <ul className="mt-4 grid gap-2 text-sm">
+            <li>
+              <a className="lien inline-flex items-center gap-1.5" href={`${base}test/`}>
+                <Icone nom="rotate-ccw" taille={16} />
+                Refaire le test
+              </a>
+            </li>
+            <li>
+              <a className="lien inline-flex items-center gap-1.5" href={`${base}comparer/?c=${res.classement.slice(0, 3).map((r) => r.slug).join(',')}`}>
+                <Icone nom="git-compare-arrows" taille={16} />
+                Comparer les premiers côte à côte
+              </a>
+            </li>
+            <li>
+              <a className="lien inline-flex items-center gap-1.5" href={`${base}methode/`}>
+                <Icone nom="flask" taille={16} />
+                Comment le score est calculé
+              </a>
+            </li>
+          </ul>
         </div>
       </section>
     </div>
