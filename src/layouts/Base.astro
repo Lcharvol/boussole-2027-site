@@ -46,8 +46,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="referrer" content="no-referrer" />
     <link rel="icon" href={lien('favicon.svg')} type="image/svg+xml" />
-    <meta name="theme-color" content="#fbf9f1" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1f1b16" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbf9f1" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:site_name" content="Boussole présidentielle 2027" />
@@ -59,11 +58,13 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
-      // Thème clair/sombre : choix mémorisé dans ce navigateur seulement (localStorage, pas de cookie).
+      // Thème clair par défaut ; le thème sombre s'active avec le bouton de l'en-tête, et ce choix est
+      // mémorisé dans ce navigateur seulement (localStorage, pas de cookie). ?theme=sombre force le thème
+      // sombre pour la page affichée, sans rien mémoriser (sert aux tests d'accessibilité).
       (function () {
-        var t = null;
-        try { t = localStorage.getItem('theme'); } catch (e) {}
-        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        var t = 'light';
+        try { if (localStorage.getItem('theme') === 'dark') t = 'dark'; } catch (e) {}
+        if (/[?&]theme=sombre\b/.test(location.search)) t = 'dark';
         document.documentElement.dataset.theme = t;
       })();
     </script>
@@ -85,8 +86,10 @@ const actif = (href: string) => chemin.startsWith(lien(href));
             ))}
           </ul>
         </nav>
-        <button type="button" id="bouton-theme" class="brut-control brut-focus ml-auto bg-background p-2 lg:ml-1" aria-label="Basculer le thème clair ou sombre" aria-pressed="false">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"></path></svg>
+        <button type="button" id="bouton-theme" class="brut-control brut-focus ml-auto inline-flex h-10 items-center gap-2 bg-background px-2.5 text-sm lg:ml-1" aria-pressed="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="icone-lune size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="icone-soleil size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+          <span class="sr-only">Thème sombre</span>
         </button>
         <details class="relative lg:hidden" id="menu-mobile">
           <summary class="brut-control brut-focus list-none bg-background px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">Menu</summary>
@@ -133,7 +136,11 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     <script is:inline>
       (function () {
         var b = document.getElementById('bouton-theme');
-        function maj() { b.setAttribute('aria-pressed', String(document.documentElement.dataset.theme === 'dark')); }
+        function maj() {
+          var sombre = document.documentElement.dataset.theme === 'dark';
+          b.setAttribute('aria-pressed', String(sombre));
+          b.title = sombre ? 'Revenir au thème clair' : 'Passer au thème sombre';
+        }
         maj();
         b.addEventListener('click', function () {
           var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';

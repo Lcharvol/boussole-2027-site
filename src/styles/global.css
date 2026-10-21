@@ -15,29 +15,8 @@
   --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
 }
 
-/* Thème sombre : Brut/UI n'en fournit pas, on décline la palette Paper. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --background: oklch(0.18 0.012 65);
-    --foreground: oklch(0.96 0.008 90);
-    --card: oklch(0.23 0.012 65);
-    --popover: oklch(0.23 0.012 65);
-    --primary: oklch(0.84 0.17 88);
-    --primary-foreground: oklch(0.13 0.01 70);
-    --secondary: oklch(0.8 0.1 210);
-    --secondary-foreground: oklch(0.13 0.01 70);
-    --muted: oklch(0.28 0.014 70);
-    --muted-foreground: oklch(0.82 0.02 80);
-    --accent: oklch(0.78 0.15 20);
-    --accent-foreground: oklch(0.13 0.01 70);
-    --destructive: oklch(0.72 0.19 28);
-    --border: oklch(0.86 0.01 90);
-    --input: oklch(0.86 0.01 90);
-    --ring: oklch(0.75 0.15 264);
-    --brut-shadow-color: oklch(0.05 0 0);
-  }
-}
+/* Thème sombre, sur demande seulement (bouton de l'en-tête) : le site s'affiche en clair par défaut.
+   Brut/UI n'en fournit pas, on décline la palette Paper. */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --background: oklch(0.18 0.012 65);
@@ -87,6 +66,12 @@
 }
 
 @layer base {
+  /* Les îlots React d'Astro sont des éléments en ligne : on les rend blocs pour que leur largeur
+     soit celle du conteneur (sinon un contenu à défilement horizontal élargit la page). */
+  astro-island {
+    display: block;
+    min-width: 0;
+  }
   html {
     font-family: var(--font-sans);
     -webkit-text-size-adjust: 100%;
@@ -110,6 +95,10 @@
 
 /* Texte long (pages Méthode, À propos…) : rendu lisible du contenu Markdown ou HTML simple. */
 @layer components {
+  .icone-soleil { display: none; }
+  [data-theme="dark"] .icone-soleil { display: block; }
+  [data-theme="dark"] .icone-lune { display: none; }
+
   .prose-b {
     max-width: 72ch;
     line-height: 1.65;

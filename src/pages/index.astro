@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import Portrait from '../components/Portrait.astro';
-import { candidats, dateFr, lien, meta, themes } from '../lib/donnees';
+import { candidats, dateFr, lien, listeQuestions, meta, questions, themes } from '../lib/donnees';
 import { calendrier } from '../data/calendrier';
-import { MODES } from '../lib/types';
+
+const exemple = listeQuestions.find((q) => q.niveau === 'rapide') ?? listeQuestions[0];
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
 const prochaines = calendrier.filter((e) => e.date && e.date >= aujourdhui).slice(0, 3);
@@ -44,23 +45,45 @@ const differences = [
       <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
         {meta.nb_questions} affirmations sur {Object.keys(themes).length} grands thèmes, comparées aux positions de {meta.nb_candidats} candidats déclarés ou pressentis. Chaque position est sourcée par une citation exacte et relue par un humain.
       </p>
-      <div class="mt-7 flex flex-wrap gap-4">
-        <a href={lien('test/')} class="brut-control brut-focus inline-flex h-12 items-center bg-primary px-6 text-base text-primary-foreground">Faire le test</a>
-        <a href={lien('questions/')} class="brut-control brut-focus inline-flex h-12 items-center bg-background px-6 text-base">Voir qui pense quoi</a>
+      <div class="mt-7 grid gap-3 sm:flex sm:flex-wrap sm:gap-4">
+        <a href={lien('test/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center gap-2 bg-primary px-7 text-lg text-primary-foreground">Faire le test <span aria-hidden="true">→</span></a>
+        <a href={lien('questions/')} class="brut-control brut-focus inline-flex h-13 items-center justify-center bg-background px-7 text-lg">Voir qui pense quoi</a>
       </div>
+      <p class="mt-4 text-sm text-muted-foreground">De 2 à 12 minutes · sans inscription · rien n'est enregistré</p>
       <p class="mt-6 text-sm font-semibold">Proximité avec des programmes, pas une consigne de vote.</p>
     </div>
-    <ul class="grid gap-4" aria-label="Les trois modes du test">
-      {MODES.map((m) => (
-        <li class="brut-panel bg-card p-4">
-          <p class="flex items-baseline justify-between gap-3">
-            <span class="font-serif text-xl font-bold">Mode {m.titre.toLowerCase()}</span>
-            <span class="text-sm font-semibold text-muted-foreground">{m.id === 'rapide' ? 8 : m.id === 'moyen' ? 24 : 40} questions · {m.duree}</span>
-          </p>
-          <p class="mt-1 text-sm text-muted-foreground">{m.fiabilite}</p>
-        </li>
+    <div class="relative">
+      <div class="brut-panel relative z-10 bg-card p-5 sm:p-6">
+        <p class="text-xs font-bold tracking-wide text-muted-foreground uppercase">Exemple d'affirmation · {themes[exemple.theme]}</p>
+        <p class="mt-2 font-serif text-2xl leading-snug font-semibold">{exemple.texte}</p>
+        <ul class="mt-5 grid gap-2" aria-label="Échelle de réponse">
+          {['2', '1', '0', '-1', '-2'].map((k) => (
+            <li class="brut-questionnaire-choice flex items-center gap-2.5 bg-background px-3 py-2 text-sm font-semibold">
+              <span class="size-4 shrink-0 rounded-full border-[length:var(--brut-border)] border-border" aria-hidden="true"></span>
+              {questions.echelle[k]}
+            </li>
+          ))}
+        </ul>
+        <p class="mt-3 text-sm text-muted-foreground">… ou « je passe ». Puis la boussole compare vos réponses aux positions sourcées des candidats.</p>
+      </div>
+      <div class="brut-panel absolute inset-0 translate-x-3 translate-y-3 bg-secondary sm:translate-x-4 sm:translate-y-4" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <section class="mt-16" aria-label="Chiffres clés">
+    <dl class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {[
+        [String(meta.nb_questions), 'affirmations, sur 8 thèmes'],
+        [String(meta.nb_candidats), 'candidats déclarés ou pressentis'],
+        [String(meta.nb_positions), 'positions sourcées par une citation exacte'],
+        ['0', 'cookie, traceur ou donnée collectée'],
+      ].map(([n, l]) => (
+        <div class="brut-surface flex flex-col-reverse bg-card p-4">
+          <dt class="mt-1 text-sm text-muted-foreground">{l}</dt>
+          <dd class="font-serif text-4xl font-bold tabular-nums sm:text-5xl">{n}</dd>
+        </div>
       ))}
-    </ul>
+    </dl>
   </section>
 
   <section class="mt-20" aria-labelledby="titre-diff">

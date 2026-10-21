@@ -10,16 +10,15 @@ export function initiales(nom: string) {
     .slice(0, 3);
 }
 
-export function PortraitMini({ slug, nom, photos, base, className = 'w-12' }: { slug: string; nom: string; photos: Photos; base: string; className?: string }) {
+export function PortraitMini({ slug, nom, photos, base, className = 'w-12', eager = false }: { slug: string; nom: string; photos: Photos; base: string; className?: string; eager?: boolean }) {
   const p = photos[slug]?.photo;
   return (
-    <div className={`brut-surface aspect-[4/5] shrink-0 overflow-hidden bg-muted ${className}`}>
-      {p ? (
-        <img src={`${base}photos/${p.image}`} alt="" width={96} height={120} loading="lazy" decoding="async" className="size-full object-cover object-[50%_25%]" />
-      ) : (
-        <div aria-hidden="true" className="flex size-full items-center justify-center font-serif text-base font-bold text-muted-foreground">
-          {initiales(nom)}
-        </div>
+    <div className={`brut-surface relative aspect-[4/5] shrink-0 overflow-hidden bg-muted ${className}`}>
+      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center font-serif text-sm font-bold text-muted-foreground">
+        {initiales(nom)}
+      </div>
+      {p && (
+        <img src={`${base}photos/${p.image}`} alt="" width={96} height={120} loading={eager ? 'eager' : 'lazy'} decoding="async" className="relative size-full object-cover object-[50%_25%]" />
       )}
     </div>
   );

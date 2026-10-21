@@ -8,8 +8,10 @@ interface Props {
   nom: string;
   taille?: 'sm' | 'md' | 'lg';
   credit?: boolean;
+  /** Charge la photo tout de suite (portraits visibles dès l'ouverture de la page). */
+  eager?: boolean;
 }
-const { slug, nom, taille = 'md', credit = false } = Astro.props;
+const { slug, nom, taille = 'md', credit = false, eager = false } = Astro.props;
 const p = photos[slug]?.photo ?? null;
 const initiales = nom
   .split(/[\s-]+/)
@@ -21,11 +23,10 @@ const dims = { sm: 'w-12', md: 'w-24', lg: 'w-40' }[taille];
 ---
 
 <figure class:list={['shrink-0', dims]}>
-  <div class="brut-surface aspect-[4/5] w-full overflow-hidden bg-muted">
-    {p ? (
-      <img src={lien(`photos/${p.image}`)} alt={`Portrait de ${nom}`} width="320" height="400" loading="lazy" decoding="async" class="size-full object-cover object-[50%_25%]" />
-    ) : (
-      <div role="img" aria-label={`${nom} (pas de photo sous licence libre)`} class="flex size-full items-center justify-center font-serif font-bold text-muted-foreground" style={`font-size: ${taille === 'sm' ? '1rem' : taille === 'md' ? '1.6rem' : '2.6rem'}`}>{initiales}</div>
+  <div class="brut-surface relative aspect-[4/5] w-full overflow-hidden bg-muted">
+    <div aria-hidden={p ? 'true' : undefined} role={p ? undefined : 'img'} aria-label={p ? undefined : `${nom} (pas de photo sous licence libre)`} class="absolute inset-0 flex items-center justify-center font-serif font-bold text-muted-foreground" style={`font-size: ${taille === 'sm' ? '1rem' : taille === 'md' ? '1.6rem' : '2.6rem'}`}>{initiales}</div>
+    {p && (
+      <img src={lien(`photos/${p.image}`)} alt={`Portrait de ${nom}`} width="320" height="400" loading={eager ? 'eager' : 'lazy'} decoding="async" class="relative size-full object-cover object-[50%_25%]" />
     )}
   </div>
   {credit && (
