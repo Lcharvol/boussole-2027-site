@@ -1,4 +1,4 @@
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -76,7 +76,7 @@ const GitCompareArrowsIcon = forwardRef<
         width={size}
         xmlns="http://www.w3.org/2000/svg"
       >
-        <motion.circle
+        <m.circle
           animate={controls}
           cx="5"
           cy="6"
@@ -95,7 +95,7 @@ const GitCompareArrowsIcon = forwardRef<
           }}
         />
 
-        <motion.path
+        <m.path
           animate={controls}
           d="M12 6h5a2 2 0 0 1 2 2v7"
           transition={{
@@ -118,7 +118,7 @@ const GitCompareArrowsIcon = forwardRef<
           }}
         />
 
-        <motion.path
+        <m.path
           animate={controls}
           d="m15 9-3-3 3-3"
           transition={{
@@ -132,7 +132,7 @@ const GitCompareArrowsIcon = forwardRef<
           }}
         />
 
-        <motion.circle
+        <m.circle
           animate={controls}
           cx="19"
           cy="18"
@@ -151,7 +151,7 @@ const GitCompareArrowsIcon = forwardRef<
           }}
         />
 
-        <motion.path
+        <m.path
           animate={controls}
           d="M12 18H7a2 2 0 0 1-2-2V9"
           transition={{
@@ -174,7 +174,7 @@ const GitCompareArrowsIcon = forwardRef<
           }}
         />
 
-        <motion.path
+        <m.path
           animate={controls}
           d="m9 15 3 3-3 3"
           transition={{

@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { AnimatePresence, motion, useAnimation } from "motion/react";
+import { AnimatePresence, m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -101,7 +101,7 @@ const CalendarDaysIcon = forwardRef<
         <path d="M3 10h18" />
         <AnimatePresence>
           {DOTS.map((dot, index) => (
-            <motion.circle
+            <m.circle
               animate={controls}
               custom={index}
               cx={dot.cx}

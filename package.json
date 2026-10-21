@@ -10,8 +10,8 @@
   },
   "scripts": {
     "donnees": "node scripts/preparer-donnees.mjs",
-    "dev": "npm run donnees -- --sans-audit && node scripts/images-partage.mjs && astro dev",
-    "build": "npm run donnees && node scripts/images-partage.mjs && astro check && astro build",
+    "dev": "npm run donnees -- --sans-audit && node scripts/images-partage.mjs && node scripts/images-portraits.mjs && astro dev",
+    "build": "npm run donnees && node scripts/images-partage.mjs && node scripts/images-portraits.mjs && astro check && astro build",
     "preview": "astro preview",
     "test": "vitest run",
     "test:concordance": "tsx scripts/concordance.ts",
@@ -28,6 +28,7 @@
     "astro": "7.3.5",
     "marked": "16.4.1",
     "satori": "0.18.3",
+    "sharp": "0.35.5",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vitest": "3.2.4"

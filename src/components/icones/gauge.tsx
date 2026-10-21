@@ -1,5 +1,5 @@
 import type { Transition } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -75,7 +75,7 @@ const GaugeIcon = forwardRef<GaugeIconHandle, GaugeIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.path
+          <m.path
             animate={controls}
             d="m12 14 4-4"
             transition={DEFAULT_TRANSITION}

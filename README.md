@@ -17,7 +17,7 @@ Le résultat mesure une proximité avec des programmes, pas une consigne de vote
 | `/questions/<id>/` | « Qui pense quoi » : une page par affirmation |
 | `/comparer/` | 2 ou 3 candidats côte à côte (`?c=slug1,slug2`) |
 | `/methode/` | Méthode complète et audit de neutralité (sortie de `audit_biais.py`, recalculée au build) |
-| `/calendrier/` | Dates officielles sourcées, et ce qui n'est pas encore fixé par décret |
+| `/calendrier/` | Dates officielles sourcées, et ce qui n'est pas encore fixé par décret ; export `.ics` des étapes à venir |
 | `/classe/` | Mode classe : fiches neutres par thème, déroulé de séance, test sans résultat nominatif |
 | `/skill-claude/` | Installer le plugin ou le skill |
 | `/donnees/` | Données ouvertes (JSON et CSV générés au build) |
@@ -29,13 +29,14 @@ Le résultat mesure une proximité avec des programmes, pas une consigne de vote
 - **Îlots React** pour ce qui doit tourner chez le visiteur : le test (`src/components/Test.tsx`), le résultat (`Resultat.tsx`), le comparateur (`Comparateur.tsx`) et la carte du mode classe (`CarteClasse.tsx`).
 - **Interface : [Brut/UI](https://www.brut-ui.site/)** (registre shadcn, Base UI, Tailwind CSS v4), palette Paper. Les composants installés sont dans `src/components/ui/` et la feuille de style du thème dans `src/components/styles/brutalist.css`. Brut/UI n'ayant pas de thème sombre, il est défini dans `src/styles/global.css`.
 - **Thème clair par défaut**, quel que soit le réglage du système ; le thème sombre s'active avec le bouton de l'en-tête (choix gardé dans le `localStorage`). `?theme=sombre` dans l'adresse force le thème sombre pour la page affichée, sans rien mémoriser : c'est ce qu'utilise le test Lighthouse du thème sombre.
-- **Icônes animées : [lucide-animated](https://lucide-animated.com)** (MIT, sur [Motion](https://motion.dev)), dans `src/components/icones/` (installées avec la CLI shadcn, conteneur passé en `span` décoratif). Le composant `src/components/Icone.tsx` les rend toutes accessibles par nom et joue l'animation au survol ou au focus clavier de l'élément parent (lien, bouton, ou bloc marqué `data-icone-parent`), jamais si le visiteur demande de réduire les animations. Sur les pages statiques, chaque icône est un petit îlot (`client:visible`) ; sans JavaScript, elle s'affiche immobile. Pour en ajouter une : `npx shadcn@latest add https://lucide-animated.com/r/<nom>.json`, déplacer le fichier dans `src/components/icones/` et l'ajouter à la table d'`Icone.tsx`.
+- **Icônes animées : [lucide-animated](https://lucide-animated.com)** (MIT, sur [Motion](https://motion.dev)), dans `src/components/icones/` (installées avec la CLI shadcn, conteneur passé en `span` décoratif). Le composant `src/components/Icone.tsx` les rend toutes accessibles par nom et joue l'animation au survol ou au focus clavier de l'élément parent (lien, bouton, ou bloc marqué `data-icone-parent`), jamais si le visiteur demande de réduire les animations. Sur les pages statiques, chaque icône est un petit îlot (`client:visible`) ; sans JavaScript, elle s'affiche immobile. Les icônes utilisent `m` et `LazyMotion` (fonctions d'animation chargées à la demande) plutôt que `motion`, pour alléger le JavaScript. Pour en ajouter une : `npx shadcn@latest add https://lucide-animated.com/r/<nom>.json`, déplacer le fichier dans `src/components/icones/`, remplacer `motion.` par `m.` et l'ajouter à la table d'`Icone.tsx`.
 - **Polices** Inter et Source Serif 4 servies par le site (aucune ressource tierce).
 
 ```
 scripts/
   preparer-donnees.mjs   récupère le dépôt du skill, écrit src/generated/ et public/donnees/, lance l'audit
   images-partage.mjs     images Open Graph (générique + une par mode) avec satori et resvg
+  images-portraits.mjs   portraits WebP recadrés en 4:5 (96, 192, 320 px) à partir de public/photos/
   concordance.ts         compare score.ts et score.py sur des profils fixes et aléatoires
   concordance_python.py  côté Python du test de concordance
   verifier-liens.mjs     vérifie les liens et ancres internes de dist/
@@ -50,6 +51,10 @@ src/
   data/classe.ts         fiches pédagogiques du mode classe
   data/photos.json       photos retenues : fichier, auteur, licence, lien
 ```
+
+### Performance
+
+Portraits WebP aux tailles affichées (`srcset`), page de résultat calculée à partir de `donnees/calcul.json` (4 ko compressés, préchargé) puis citations chargées ensuite, place réservée pendant le calcul (pas de saut de mise en page), îlots d'icônes hydratés au repos ou à l'affichage. Le serveur de test compresse en gzip comme GitHub Pages ; Lighthouse mobile ≈ 95 sur les pages de contenu.
 
 ### Le calcul
 

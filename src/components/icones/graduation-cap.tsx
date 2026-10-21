@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -95,7 +95,7 @@ const GraduationCapIcon = forwardRef<
         width={size}
         xmlns="http://www.w3.org/2000/svg"
       >
-        <motion.g
+        <m.g
           animate={controls}
           style={{ transformOrigin: "12px 12px" }}
           variants={CAP_VARIANTS}
@@ -103,7 +103,7 @@ const GraduationCapIcon = forwardRef<
           <path d="M2 10l10-5 10 5-10 5z" />
           <path d="M6 12v5c3 3 9 3 12 0v-5" />
 
-          <motion.path
+          <m.path
             d="M22 10v6"
             style={{
               transformBox: "fill-box",
@@ -111,7 +111,7 @@ const GraduationCapIcon = forwardRef<
             }}
             variants={TASSEL_VARIANTS}
           />
-        </motion.g>
+        </m.g>
       </svg>
     </span>
   );

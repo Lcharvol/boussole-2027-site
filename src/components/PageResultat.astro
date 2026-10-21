@@ -15,6 +15,7 @@ const nb = { rapide: 8, moyen: 24, long: 40 };
   noindex
   large
 >
+  <link slot="head" rel="preload" href={lien('donnees/calcul.json')} as="fetch" crossorigin="anonymous" />
   <h1 class="text-4xl font-bold">Votre résultat</h1>
   <div class="mt-6">
     <Resultat client:load questions={listeQuestions} themes={themes} echelle={questions.echelle} version={questions.version} base={lien()} photos={photos} />

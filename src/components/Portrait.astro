@@ -26,7 +26,17 @@ const dims = { sm: 'w-12', md: 'w-24', lg: 'w-40' }[taille];
   <div class="brut-surface relative aspect-[4/5] w-full overflow-hidden bg-muted">
     <div aria-hidden={p ? 'true' : undefined} role={p ? undefined : 'img'} aria-label={p ? undefined : `${nom} (pas de photo sous licence libre)`} class="absolute inset-0 flex items-center justify-center font-serif font-bold text-muted-foreground" style={`font-size: ${taille === 'sm' ? '1rem' : taille === 'md' ? '1.6rem' : '2.6rem'}`}>{initiales}</div>
     {p && (
-      <img src={lien(`photos/${p.image}`)} alt={`Portrait de ${nom}`} width="320" height="400" loading={eager ? 'eager' : 'lazy'} decoding="async" class="relative size-full object-cover object-[50%_25%]" />
+      <img
+        src={lien(`portraits/${slug}-192.webp`)}
+        srcset={[96, 192, 320].map((l) => `${lien(`portraits/${slug}-${l}.webp`)} ${l}w`).join(', ')}
+        sizes={{ sm: '48px', md: '96px', lg: '160px' }[taille]}
+        alt={`Portrait de ${nom}`}
+        width="320"
+        height="400"
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        class="relative size-full object-cover"
+      />
     )}
   </div>
   {credit && (

@@ -1,5 +1,5 @@
 import type { Variants } from "motion/react";
-import { motion, useAnimation } from "motion/react";
+import { m, useAnimation } from "motion/react";
 import type { HTMLAttributes } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 
@@ -88,7 +88,7 @@ const CircleCheckIcon = forwardRef<CircleCheckIconHandle, CircleCheckIconProps>(
           xmlns="http://www.w3.org/2000/svg"
         >
           <circle cx="12" cy="12" r="10" />
-          <motion.path
+          <m.path
             animate={controls}
             d="m9 12 2 2 4-4"
             initial="normal"

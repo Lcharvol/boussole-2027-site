@@ -9,6 +9,11 @@ export function getStaticPaths() {
 }
 const { t } = Astro.props as { t: (typeof questionsParTheme)[number] };
 const VALS = ['2', '1', '0', '-1', '-2', 'inconnue'];
+// Le titre du bloc dit déjà de quel côté vient l'argument : on retire le préfixe et on rétablit la majuscule.
+const sansPrefixe = (t: string) => {
+  const s = t.replace(/^Argument avancé : /, '');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 ---
 
 <Base titre={`Fiche classe : ${t.libelle}`} description={`Fiche pédagogique neutre sur le thème « ${t.libelle} » : contexte et arguments avancés de part et d'autre, pour chaque affirmation de la Boussole présidentielle 2027.`}>
@@ -30,11 +35,11 @@ const VALS = ['2', '1', '0', '-1', '-2', 'inconnue'];
               <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div class="brut-surface bg-background p-3">
                   <h3 class="font-sans text-sm font-bold">Plutôt d'accord</h3>
-                  <p class="mt-1 text-sm leading-relaxed">{f.pour.replace(/^Argument avancé : /, '')}</p>
+                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.pour)}</p>
                 </div>
                 <div class="brut-surface bg-background p-3">
                   <h3 class="font-sans text-sm font-bold">Plutôt pas d'accord</h3>
-                  <p class="mt-1 text-sm leading-relaxed">{f.contre.replace(/^Argument avancé : /, '')}</p>
+                  <p class="mt-1 text-sm leading-relaxed">{sansPrefixe(f.contre)}</p>
                 </div>
               </div>
             </>

@@ -2,6 +2,7 @@
 // atteint au clavier l'élément interactif qui contient l'icône (lien, bouton…), pas seulement l'icône.
 // Elle est désactivée si le visiteur a demandé de réduire les animations. Sans JavaScript, l'icône
 // s'affiche quand même (rendu au build), simplement immobile. Les icônes sont décoratives (aria-hidden).
+import { LazyMotion } from 'motion/react';
 import { useEffect, useRef, type ComponentType, type RefAttributes } from 'react';
 import { ArrowLeftIcon } from './icones/arrow-left';
 import { ArrowRightIcon } from './icones/arrow-right';
@@ -73,6 +74,8 @@ const ICONES = {
   'users': UsersIcon,
 } satisfies Record<string, Composant>;
 
+const chargerFonctions = () => import('../lib/fonctions-animation').then((r) => r.default);
+
 export type NomIcone = keyof typeof ICONES;
 
 interface Props {
@@ -108,7 +111,10 @@ export default function Icone({ nom, taille = 20, className }: Props) {
   const C = ICONES[nom] as Composant;
   return (
     <span ref={conteneur} aria-hidden="true" className={`inline-flex shrink-0 items-center ${className ?? ''}`}>
-      <C ref={ref} size={taille} />
+      {/* LazyMotion + m : seules les fonctions d'animation utiles sont chargées (bien plus léger que motion). */}
+      <LazyMotion features={chargerFonctions} strict>
+        <C ref={ref} size={taille} />
+      </LazyMotion>
     </span>
   );
 }
