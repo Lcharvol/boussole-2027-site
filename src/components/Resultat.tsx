@@ -293,6 +293,8 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   const pelotonListe = res.classement.filter((r) => peloton.has(r.nom));
   const autres = res.classement.filter((r) => !peloton.has(r.nom));
   const tete = res.classement.slice(0, 3);
+  // Les trois premiers sont dans la marge du premier : on le dit avant de montrer les visages.
+  const indiscernables = tete.length === 3 && tete.every((r) => peloton.has(r.nom));
 
   return (
     <div className="grid gap-10">
@@ -320,8 +322,18 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
         {tete.length > 0 && (
           <div className="brut-panel bg-card p-5 sm:p-6">
             <h2 id="titre-resume" className="text-2xl font-bold sm:text-3xl">
-              Les programmes les plus proches de vos réponses
+              {indiscernables ? 'En tête de votre classement' : 'Les programmes les plus proches de vos réponses'}
             </h2>
+            {indiscernables && (
+              <p className="mt-2 text-sm font-semibold">
+                Ces trois-là, comme {res.peloton_de_tete.length - 3 > 0 ? `${res.peloton_de_tete.length - 3} autre${res.peloton_de_tete.length - 3 > 1 ? 's' : ''}` : 'les autres du peloton'}, ne peuvent pas être départagés : leur ordre n'est pas significatif.{etat.mode !== 'long' && ' Le mode long resserre les marges.'}
+              </p>
+            )}
+            {res.nb_reponses < 10 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Avec {res.nb_reponses} réponse{res.nb_reponses > 1 ? 's' : ''}, ce résultat donne une tendance. Le mode moyen ou long le précise.
+              </p>
+            )}
             <ul className="mt-5 grid grid-cols-3 gap-3 sm:gap-6">
               {tete.map((r, i) => (
                 <li key={r.slug} className="entree min-w-0" style={{ ['--delai' as string]: `${i * 120}ms` }}>
@@ -341,6 +353,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
                 </li>
               ))}
             </ul>
+            {!indiscernables && (
             <p className="mt-5 text-sm">
               {res.peloton_de_tete.length > 1 ? (
                 <>
@@ -353,6 +366,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
                 <>Le premier se détache : aucun autre candidat n'est dans sa marge d'incertitude.</>
               )}
             </p>
+            )}
           </div>
         )}
       </section>

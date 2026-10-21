@@ -22,6 +22,7 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
   const [candidats, setCandidats] = useState<Record<string, Candidat> | null>(null);
   const [erreur, setErreur] = useState(false);
   const [theme, setTheme] = useState('');
+  const [divergences, setDivergences] = useState(false);
 
   useEffect(() => {
     const c = new URLSearchParams(location.search).get('c');
@@ -44,7 +45,16 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
     history.replaceState(null, '', url);
   }, [actifs.join(',')]);
 
-  const qs = useMemo(() => questions.filter((q) => !theme || q.theme === theme), [questions, theme]);
+  const qs = useMemo(
+    () =>
+      questions.filter((q) => {
+        if (theme && q.theme !== theme) return false;
+        if (!divergences || !candidats) return true;
+        // Divergence : les candidats choisis n'ont pas tous la même position (inconnue comprise).
+        return new Set(actifs.map((s) => candidats[s]?.positions[q.id]?.valeur ?? null)).size > 1;
+      }),
+    [questions, theme, divergences, candidats, actifs.join(',')],
+  );
 
   return (
     <div>
@@ -68,7 +78,8 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
           </label>
         ))}
       </fieldset>
-      <label className="mt-4 grid max-w-sm gap-1 text-sm font-semibold">
+      <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+      <label className="grid w-full max-w-sm gap-1 text-sm font-semibold">
         Thème
         <NativeSelect value={theme} onChange={(e) => setTheme(e.target.value)}>
           <NativeSelectOption value="">Tous les thèmes</NativeSelectOption>
@@ -79,6 +90,11 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
           ))}
         </NativeSelect>
       </label>
+      <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold">
+        <input type="checkbox" className="size-5 accent-[var(--primary)]" checked={divergences} onChange={(e) => setDivergences(e.target.checked)} />
+        Seulement les questions où ils divergent
+      </label>
+      </div>
 
       {erreur && <p className="mt-6 font-semibold">Les données n'ont pas pu être chargées. Rechargez la page.</p>}
       {actifs.length < 2 && <p className="mt-8 text-muted-foreground">Choisissez au moins deux candidats pour les comparer.</p>}
@@ -89,7 +105,10 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
       )}
       {actifs.length >= 2 && candidats && (
         <div className="mt-8">
-          <div className="sticky top-0 z-10 grid gap-3 border-b-[length:var(--brut-border)] border-border bg-background py-3" style={{ gridTemplateColumns: `repeat(${actifs.length}, minmax(0, 1fr))` }}>
+          <p aria-live="polite" className="text-sm text-muted-foreground">
+            {qs.length} question{qs.length > 1 ? 's' : ''} affichée{qs.length > 1 ? 's' : ''}
+          </p>
+          <div className="sticky top-0 z-10 mt-2 hidden gap-3 border-b-[length:var(--brut-border)] border-border bg-background py-3 sm:grid" style={{ gridTemplateColumns: `repeat(${actifs.length}, minmax(0, 1fr))` }}>
             {actifs.map((s) => (
               <div key={s} className="flex items-center gap-2">
                 <PortraitMini slug={s} nom={candidats[s].nom} photos={photos} base={base} className="w-10" />
@@ -111,13 +130,18 @@ export default function Comparateur({ questions, themes, echelle, base, photos, 
                   </a>{' '}
                   <span className="text-xs font-semibold text-muted-foreground">({themes[q.theme]})</span>
                 </h2>
-                <div className="mt-2 grid gap-3" style={{ gridTemplateColumns: `repeat(${actifs.length}, minmax(0, 1fr))` }}>
+                <div className="mt-2 grid gap-2 sm:gap-3 sm:[grid-template-columns:repeat(var(--n),minmax(0,1fr))]" style={{ ['--n' as string]: actifs.length }}>
                   {actifs.map((s) => {
                     const p = candidats[s].positions[q.id];
                     const connue = p && p.valeur !== null && p.valeur !== undefined;
                     return (
                       <div key={s} className="brut-surface min-w-0 bg-card p-3 text-sm">
-                        <p className="sr-only">{candidats[s].nom} :</p>
+                        <p className="mb-1 flex items-center gap-2 text-xs font-bold sm:sr-only">
+                          <span className="sm:hidden">
+                            <PortraitMini slug={s} nom={candidats[s].nom} photos={photos} base={base} className="w-6" />
+                          </span>
+                          {candidats[s].nom} :
+                        </p>
                         <p className="font-bold">{connue ? echelle[String(p!.valeur)] : 'Position inconnue'}</p>
                         {connue && p!.citation && (
                           <details className="mt-1">

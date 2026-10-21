@@ -72,6 +72,19 @@ export default function Test({ questions, themes, echelle, version, base, classe
   );
   const repondues = aPoser.filter((q) => reponses[q.id] !== undefined).length;
 
+  // Les réponses ne sont gardées nulle part : on prévient avant de quitter la page en cours de test.
+  const envoi = useRef(false);
+  useEffect(() => {
+    if (!repondues) return;
+    const avertir = (e: BeforeUnloadEvent) => {
+      if (envoi.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', avertir);
+    return () => window.removeEventListener('beforeunload', avertir);
+  }, [repondues]);
+
   useEffect(() => {
     if (premierRendu.current) {
       premierRendu.current = false;
@@ -94,6 +107,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
     const etat: Etat = { mode: mode!, reponses: final, importance };
     const code = encoder(etat, ordreQ, ordreT, version);
     const cible = classe ? 'classe/resultat/' : `resultat/${mode}/`;
+    envoi.current = true;
     location.assign(`${base}${cible}#${code}`);
   }
 
