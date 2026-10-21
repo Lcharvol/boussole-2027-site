@@ -1,7 +1,7 @@
 // Portage à l'identique de skills/boussole-presidentielle-2027/scripts/score.py.
 //
 // Toute modification de score.py doit être reportée ici : le test de concordance de la CI
-// (scripts/concordance.mjs) compare les deux sorties sur une série de profils et échoue au moindre écart.
+// (scripts/concordance.ts) compare les deux sorties sur une série de profils et échoue au moindre écart.
 // Les commentaires de score.py font foi pour la méthode ; ce fichier suit sa structure ligne à ligne.
 import { PyRandom, pyRound, pyRoundN, pySum } from './python';
 
@@ -111,7 +111,7 @@ const valeurDe = (c: CandidatCalcul, qid: string) => {
 
 export function calculer(
   user: Profil,
-  questions: { questions: QuestionCalcul[] },
+  questions: { enjeux: QuestionCalcul[] },
   candidats: CandidatCalcul[],
   tirages = TIRAGES,
   graine = GRAINE,
@@ -121,11 +121,15 @@ export function calculer(
   const importance = user.importance ?? {};
   const imp = (t: string) => Number(importance[t] ?? 1);
   const themeDe: Record<string, string> = {};
-  for (const q of questions.questions) themeDe[q.id] = q.theme;
+  for (const q of questions.enjeux) themeDe[q.id] = q.theme;
   const inconnues = Object.keys(reponses)
     .filter((k) => !(k in themeDe))
     .sort();
-  if (inconnues.length) throw new Error(`Identifiants de question inconnus : ${inconnues.join(', ')}`);
+  if (inconnues.length) throw new Error(`Identifiants d'enjeu inconnus : ${inconnues.join(', ')}`);
+  const invalides = Object.keys(reponses)
+    .filter((k) => ![-2, -1, 0, 1, 2].includes(reponses[k]))
+    .sort();
+  if (invalides.length) throw new Error(`Réponses hors de l'échelle -2…2 : ${invalides.join(', ')}`);
   const qids = Object.keys(reponses).sort();
 
   const resultats: ResultatCandidat[] = [];

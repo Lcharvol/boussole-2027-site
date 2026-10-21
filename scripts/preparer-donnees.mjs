@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Prépare les données du site à partir du dépôt du skill (source unique, jamais recopiée à la main).
 //
-// 1. Récupère le dépôt Lcharvol/boussole-presidentielle-2027 (branche main) dans .donnees/, sauf si
-//    BOUSSOLE_SKILL_DIR pointe déjà vers un clone (cas de la CI, qui le récupère avec actions/checkout).
+// 1. Récupère le dépôt Lcharvol/boussole-presidentielle-2027 dans .donnees/ (branche BOUSSOLE_SKILL_REF,
+//    main par défaut), sauf si BOUSSOLE_SKILL_DIR pointe déjà vers un clone (cas de la CI).
+//    Les données doivent être au format 2 (data/enjeux.json, fiches "format": 2) : sinon, arrêt avec un
+//    message clair plutôt qu'un site construit sur des données mal lues.
 // 2. Écrit src/generated/donnees.json (lu par les pages au build) et src/generated/audit.md (sortie de
 //    scripts/audit_biais.py, les chiffres de neutralité sont donc toujours ceux des données publiées).
 // 3. Écrit les données ouvertes dans public/donnees/ (JSON complet, JSON de calcul, CSV).
@@ -21,21 +23,30 @@ function git(...a) {
   return execFileSync('git', a, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }).trim();
 }
 
+const branche = process.env.BOUSSOLE_SKILL_REF || 'main';
 let skill = process.env.BOUSSOLE_SKILL_DIR ? resolve(process.env.BOUSSOLE_SKILL_DIR) : join(RACINE, '.donnees', 'skill');
 if (!process.env.BOUSSOLE_SKILL_DIR) {
   if (!existsSync(skill)) {
-    console.log(`Clonage de ${DEPOT} (main)…`);
+    console.log(`Clonage de ${DEPOT} (${branche})…`);
     mkdirSync(join(RACINE, '.donnees'), { recursive: true });
-    git('clone', '--depth', '1', '--branch', 'main', DEPOT, skill);
+    git('clone', '--depth', '1', '--branch', branche, DEPOT, skill);
   } else if (args.has('--rafraichir')) {
     git('-C', skill, 'pull', '--ff-only');
   }
 }
 const dossierSkill = join(skill, 'skills', 'boussole-presidentielle-2027');
 const dossierDonnees = join(dossierSkill, 'data');
-if (!existsSync(join(dossierDonnees, 'questions.json'))) {
-  console.error(`Données introuvables dans ${dossierDonnees}`);
+function arret(message) {
+  console.error(`✗ ${message}`);
   process.exit(1);
+}
+if (!existsSync(join(dossierDonnees, 'enjeux.json'))) {
+  arret(
+    existsSync(join(dossierDonnees, 'questions.json'))
+      ? `Format de données non reconnu dans ${dossierDonnees} : data/questions.json (format 1) au lieu de data/enjeux.json (format 2). ` +
+          'Ce site lit le format 2 (dilemmes) ; pointez BOUSSOLE_SKILL_REF ou BOUSSOLE_SKILL_DIR vers une version du skill au format 2.'
+      : `Données introuvables dans ${dossierDonnees} (data/enjeux.json absent).`,
+  );
 }
 
 let commit = null;
@@ -47,7 +58,8 @@ try {
 }
 
 const lire = (f) => JSON.parse(readFileSync(f, 'utf8'));
-const questions = lire(join(dossierDonnees, 'questions.json'));
+const enjeux = lire(join(dossierDonnees, 'enjeux.json'));
+if (enjeux.format !== 2 || !Array.isArray(enjeux.enjeux)) arret(`data/enjeux.json : format ${enjeux.format ?? 'absent'}, attendu 2 (liste "enjeux").`);
 // Même ordre que score.py : fichiers triés par nom.
 const fichiers = readdirSync(join(dossierDonnees, 'candidats'))
   .filter((f) => f.endsWith('.json'))
@@ -55,10 +67,18 @@ const fichiers = readdirSync(join(dossierDonnees, 'candidats'))
 const candidats = fichiers.map((f) => lire(join(dossierDonnees, 'candidats', f)));
 
 // Contrôles minimaux : le site refuse de se construire sur des données incohérentes.
-const ids = new Set(questions.questions.map((q) => q.id));
+const ids = new Set(enjeux.enjeux.map((e) => e.id));
+for (const e of enjeux.enjeux) {
+  if (!(e.theme in enjeux.themes)) arret(`${e.id} : thème inconnu ${e.theme}`);
+  if (!e.pole_a || !e.pole_b) arret(`${e.id} : pôle A ou B manquant`);
+  if (!e.variantes?.length) arret(`${e.id} : aucune variante`);
+  for (const v of e.variantes) if (!v.question || !v.a || !v.b) arret(`${v.id} : question ou option manquante`);
+}
 for (const c of candidats) {
-  for (const qid of Object.keys(c.positions ?? {})) {
-    if (!ids.has(qid)) throw new Error(`${c.slug} : question inconnue ${qid}`);
+  if (c.format !== 2) arret(`${c.slug} : fiche au format ${c.format ?? '1'}, attendu 2.`);
+  for (const [id, p] of Object.entries(c.positions ?? {})) {
+    if (!ids.has(id)) arret(`${c.slug} : enjeu inconnu ${id}`);
+    if (p && p.valeur != null && ![-2, -1, 0, 1, 2].includes(p.valeur)) arret(`${c.slug} / ${id} : valeur ${p.valeur} hors de l'échelle -2…2`);
   }
 }
 
@@ -81,9 +101,10 @@ const meta = {
   depot: DEPOT,
   commit,
   date_commit: dateCommit,
-  version_questions: questions.version,
+  branche: process.env.BOUSSOLE_SKILL_DIR ? null : branche,
+  version_enjeux: enjeux.version,
   version_plugin: version,
-  nb_questions: questions.questions.length,
+  nb_enjeux: enjeux.enjeux.length,
   nb_candidats: candidats.filter((c) => c.statut !== 'retiré').length,
   nb_positions: nbPositions,
   nb_positions_relues: nbRelues,
@@ -109,19 +130,19 @@ if (!args.has('--sans-audit')) {
 
 const gen = join(RACINE, 'src', 'generated');
 mkdirSync(gen, { recursive: true });
-writeFileSync(join(gen, 'donnees.json'), JSON.stringify({ meta, questions, candidats }));
+writeFileSync(join(gen, 'donnees.json'), JSON.stringify({ meta, enjeux, candidats }));
 writeFileSync(join(gen, 'audit.md'), audit ?? '');
 
 // --- Données ouvertes -----------------------------------------------------------------------
 const pub = join(RACINE, 'public', 'donnees');
 mkdirSync(pub, { recursive: true });
-writeFileSync(join(pub, 'boussole-2027.json'), JSON.stringify({ meta, questions, candidats }, null, 1));
+writeFileSync(join(pub, 'boussole-2027.json'), JSON.stringify({ meta, enjeux, candidats }, null, 1));
 // Version allégée pour le calcul dans le navigateur : valeur et confiance seulement.
 writeFileSync(
   join(pub, 'calcul.json'),
   JSON.stringify({
     commit,
-    questions: questions.questions.map(({ id, theme, niveau }) => ({ id, theme, niveau })),
+    enjeux: enjeux.enjeux.map(({ id, theme }) => ({ id, theme })),
     candidats: candidats.map((c) => ({
       slug: c.slug,
       nom: c.nom,
@@ -147,12 +168,19 @@ const csv = (rows) =>
     )
     .join('\r\n') +
   '\r\n';
-const themes = questions.themes;
+const themes = enjeux.themes;
 writeFileSync(
-  join(pub, 'questions.csv'),
+  join(pub, 'enjeux.csv'),
   csv([
-    ['id', 'theme', 'theme_libelle', 'niveau', 'texte'],
-    ...questions.questions.map((q) => [q.id, q.theme, themes[q.theme], q.niveau, q.texte]),
+    ['id', 'theme', 'theme_libelle', 'pole_a', 'pole_b', 'contexte'],
+    ...enjeux.enjeux.map((e) => [e.id, e.theme, themes[e.theme], e.pole_a, e.pole_b, e.contexte]),
+  ]),
+);
+writeFileSync(
+  join(pub, 'variantes.csv'),
+  csv([
+    ['id', 'enjeu', 'question', 'option_a', 'option_b', 'validee'],
+    ...enjeux.enjeux.flatMap((e) => e.variantes.map((v) => [v.id, e.id, v.question, v.a, v.b, v.validee])),
   ]),
 );
 writeFileSync(
@@ -162,17 +190,18 @@ writeFileSync(
     ...candidats.map((c) => [c.slug, c.nom, c.parti, c.statut, c.programme, c.programme_url, c.mis_a_jour, c.notes]),
   ]),
 );
-const lignes = [['candidat', 'nom', 'question', 'theme', 'valeur', 'confiance', 'relu', 'date_source', 'source', 'citation', 'resume']];
+// valeur : de -2 (pôle A nettement) à +2 (pôle B nettement), vide si la position est inconnue.
+const lignes = [['candidat', 'nom', 'enjeu', 'theme', 'valeur', 'confiance', 'relu', 'date_source', 'source', 'citation', 'resume']];
 for (const c of candidats) {
-  for (const q of questions.questions) {
-    const p = c.positions?.[q.id] ?? {};
-    lignes.push([c.slug, c.nom, q.id, q.theme, p.valeur ?? '', p.confiance ?? '', p.relu ?? '', p.date_source ?? '', p.source ?? '', p.citation ?? '', p.resume ?? '']);
+  for (const e of enjeux.enjeux) {
+    const p = c.positions?.[e.id] ?? {};
+    lignes.push([c.slug, c.nom, e.id, e.theme, p.valeur ?? '', p.confiance ?? '', p.relu ?? '', p.date_source ?? '', p.source ?? '', p.citation ?? '', p.resume ?? '']);
   }
 }
 writeFileSync(join(pub, 'positions.csv'), csv(lignes));
 
 console.log(
-  `Données prêtes : ${meta.nb_questions} questions, ${meta.nb_candidats} candidats, ${nbPositions} positions` +
+  `Données prêtes (format 2) : ${meta.nb_enjeux} enjeux, ${meta.nb_candidats} candidats, ${nbPositions} positions` +
     (commit ? ` (commit ${commit.slice(0, 7)})` : '') +
     (audit ? ', audit calculé.' : ', sans audit.'),
 );
