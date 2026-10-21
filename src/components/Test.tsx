@@ -21,14 +21,17 @@ interface Props {
 
 const MAX_PRIORITES = 3;
 const NB: Record<Mode, number> = { rapide: 8, moyen: 24, long: 40 };
-const OPTIONS: { v: string; cle: string }[] = [
-  { v: '2', cle: '2' },
-  { v: '1', cle: '1' },
-  { v: '0', cle: '0' },
-  { v: '-1', cle: '-1' },
-  { v: '-2', cle: '-2' },
-  { v: 'passe', cle: 'null' },
+// touche : raccourci clavier (1 à 5 de « tout à fait d'accord » à « pas du tout d'accord », 0 pour passer).
+const OPTIONS: { v: string; cle: string; touche: string }[] = [
+  { v: '2', cle: '2', touche: '1' },
+  { v: '1', cle: '1', touche: '2' },
+  { v: '0', cle: '0', touche: '3' },
+  { v: '-1', cle: '-1', touche: '4' },
+  { v: '-2', cle: '-2', touche: '5' },
+  { v: 'passe', cle: 'null', touche: '0' },
 ];
+// Affiché seulement sur les appareils avec souris (et donc, en général, un clavier).
+const SI_CLAVIER = 'hidden [@media(hover:hover)_and_(pointer:fine)]:inline-flex';
 
 type Etape = { type: 'mode' } | { type: 'theme'; i: number } | { type: 'priorites' };
 
@@ -128,6 +131,42 @@ export default function Test({ questions, themes, echelle, version, base, classe
 
   // Après un clic sur une réponse, amène la question suivante sans réponse à l'écran (pas au clavier :
   // les flèches changent la réponse dans le groupe, on ne déplace donc rien).
+  // Raccourcis clavier : la touche s'applique à la question qui a le focus, sinon à la première sans
+  // réponse du thème. Le focus passe ensuite à la question suivante sans réponse, ou au bouton
+  // « Thème suivant » (Entrée pour continuer).
+  const themeCourant = etape.type === 'theme' ? etapesThemes[etape.i] : undefined;
+  const cibleClavier = themeCourant?.questions.find((q) => reponses[q.id] === undefined)?.id;
+  useEffect(() => {
+    if (!themeCourant) return;
+    const surTouche = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+      const t = ev.target as HTMLElement | null;
+      if (t?.closest('textarea, select, [contenteditable="true"], input:not([type="radio"]):not([type="checkbox"])')) return;
+      const option = OPTIONS.find((o) => o.touche === ev.key);
+      if (!option) return;
+      const carte = t?.closest<HTMLElement>('[id^="carte-"]');
+      const qid = carte ? carte.id.slice('carte-'.length) : cibleClavier;
+      const liste = themeCourant.questions;
+      const i = liste.findIndex((q) => q.id === qid);
+      if (i < 0) return;
+      ev.preventDefault();
+      setReponses((rep) => ({ ...rep, [qid!]: option.v === 'passe' ? null : Number(option.v) }));
+      const prochaine = liste.slice(i + 1).find((q) => reponses[q.id] === undefined);
+      const doux = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => {
+        const focus = prochaine
+          ? document.querySelector<HTMLElement>(`#carte-${prochaine.id} [role="radio"]`)
+          : document.getElementById('bouton-suivant');
+        focus?.focus({ preventScroll: true });
+        document
+          .getElementById(prochaine ? `carte-${prochaine.id}` : 'barre-test')
+          ?.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: prochaine ? 'center' : 'end' });
+      }, 120);
+    };
+    window.addEventListener('keydown', surTouche);
+    return () => window.removeEventListener('keydown', surTouche);
+  }, [themeCourant, cibleClavier, reponses]);
+
   function suivanteApresClic(qid: string, liste: Question[]) {
     const i = liste.findIndex((q) => q.id === qid);
     const prochaine = liste.slice(i + 1).find((q) => reponses[q.id] === undefined);
@@ -257,6 +296,11 @@ export default function Test({ questions, themes, echelle, version, base, classe
         <h2 key={e.theme} id="titre-etape" ref={titreRef} tabIndex={-1} className="entree mt-1 scroll-mt-4 text-3xl font-bold outline-none sm:text-4xl">
           {themes[e.theme]}
         </h2>
+        <p className={`${SI_CLAVIER} mt-2 flex-wrap items-center gap-1.5 text-sm text-muted-foreground`}>
+          Au clavier : <kbd className="brut-kbd px-1.5 font-mono text-xs">1</kbd> à <kbd className="brut-kbd px-1.5 font-mono text-xs">5</kbd> pour
+          répondre, <kbd className="brut-kbd px-1.5 font-mono text-xs">0</kbd> pour passer, puis <kbd className="brut-kbd px-1.5 font-mono text-xs">Entrée</kbd> sur
+          « Thème suivant ».
+        </p>
         <ol className="mt-6 grid gap-6">
           {e.questions.map((q, iq) => {
             const v = reponses[q.id];
@@ -272,6 +316,9 @@ export default function Test({ questions, themes, echelle, version, base, classe
                   <span>
                     Question {numero(q.id)} / {aPoser.length}
                   </span>
+                  {v === undefined && q.id === cibleClavier && (
+                    <span className={`${SI_CLAVIER} items-center gap-1 normal-case`}>Clavier : touches 1 à 5</span>
+                  )}
                   {v !== undefined && (
                     <span className="apparition inline-flex items-center gap-1 normal-case">
                       <Icone nom="check" taille={14} />
@@ -298,8 +345,11 @@ export default function Test({ questions, themes, echelle, version, base, classe
                           : 'brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground motion-safe:has-[[data-checked]]:animate-[pop_0.28s_ease-out] sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center'
                       }
                     >
-                      <RadioGroupItem value={o.v} />
+                      <RadioGroupItem value={o.v} aria-keyshortcuts={o.touche} />
                       <span>{o.v === 'passe' ? 'Je passe' : echelle[o.cle]}</span>
+                      <kbd aria-hidden="true" className={`${SI_CLAVIER} brut-kbd ml-auto px-1.5 font-mono text-[0.7rem] opacity-70 sm:ml-0`}>
+                        {o.touche}
+                      </kbd>
                     </label>
                   ))}
                 </RadioGroup>
@@ -319,7 +369,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
             <span className="hidden sm:inline">{etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}</span>
             <span className="sm:hidden">Retour</span>
           </Button>,
-          <Button className="h-11 px-5" onClick={() => setEtape(dernier ? { type: 'priorites' } : { type: 'theme', i: etape.i + 1 })}>
+          <Button id="bouton-suivant" className="h-11 px-5" onClick={() => setEtape(dernier ? { type: 'priorites' } : { type: 'theme', i: etape.i + 1 })}>
             {dernier ? 'Mes priorités' : 'Thème suivant'}
             <Icone nom="arrow-right" taille={18} />
           </Button>,
