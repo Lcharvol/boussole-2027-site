@@ -13,12 +13,15 @@
   --muted-foreground: oklch(0.36 0.02 65);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  /* Quadrillage de fond, repris de la documentation Brut/UI. */
+  --site-grid-color: oklch(0.15 0.01 65 / 9%);
 }
 
 /* Thème sombre, sur demande seulement (bouton de l'en-tête) : le site s'affiche en clair par défaut.
    Brut/UI n'en fournit pas, on décline la palette Paper. */
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --site-grid-color: oklch(0.96 0.008 90 / 7%);
   --background: oklch(0.18 0.012 65);
   --foreground: oklch(0.96 0.008 90);
   --card: oklch(0.23 0.012 65);
@@ -78,6 +81,12 @@
   }
   body {
     min-height: 100dvh;
+    background-image:
+      linear-gradient(var(--site-grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--site-grid-color) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-attachment: fixed;
+    background-position: 0 0;
   }
   h1, h2, h3 {
     font-family: var(--font-serif);
