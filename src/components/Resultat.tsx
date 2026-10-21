@@ -5,9 +5,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
-import { decoder, encoder, type Etat } from '@/lib/partage';
+import { initiales, libellePosition, titreEnjeu } from '@/lib/axe';
+import { decoder, encoder, estAncienLien, type Etat } from '@/lib/partage';
 import { calculer, candidatsActifs, NIVEAU, type CandidatCalcul, type Resultat as Res, type ResultatCandidat } from '@/lib/score';
-import { CONFIANCE, NIVEAUX_DU_MODE, type Candidat, type Mode, type Photos, type Question } from '@/lib/types';
+import { MAX_ADAPTATIF } from '@/lib/tirage';
+import { CONFIANCE, type Candidat, type Mode, type Photos } from '@/lib/types';
+import Axe from './Axe';
 import Icone from './Icone';
 import CarteAxes from './graphiques/CarteAxes';
 import GrilleThemes from './graphiques/GrilleThemes';
@@ -15,19 +18,23 @@ import Proximite from './graphiques/Proximite';
 import type { Carte } from '@/lib/acp';
 import { PortraitMini } from './Portrait';
 
+export interface EnjeuResume {
+  id: string;
+  theme: string;
+  pole_a: string;
+  pole_b: string;
+}
+
 interface Props {
-  questions: Question[];
+  enjeux: EnjeuResume[];
   themes: Record<string, string>;
-  echelle: Record<string, string>;
   version: string;
   base: string;
   photos: Photos;
   carte: Carte;
 }
 
-const NB: Record<Mode, number> = { rapide: 8, moyen: 24, long: 40 };
-const SUIVANT: Partial<Record<Mode, Mode[]>> = { rapide: ['moyen', 'long'], moyen: ['long'] };
-const signe = (v: number) => (v > 0 ? `+${v}` : String(v));
+const SUIVANT: Partial<Record<Mode, Mode[]>> = { rapide: ['adaptatif', 'complet'], adaptatif: ['complet'] };
 
 function Barre({ score, marge, delai = 0 }: { score: number; marge: number | null; delai?: number }) {
   const m = marge ?? 0;
@@ -68,10 +75,10 @@ function Compteur({ valeur }: { valeur: number }) {
   return <>{v}</>;
 }
 
-export default function Resultat({ questions, themes, echelle, version, base, photos, carte }: Props) {
-  const ordreQ = useMemo(() => questions.map((q) => q.id), [questions]);
+export default function Resultat({ enjeux, themes, version, base, photos, carte }: Props) {
+  const ordreQ = useMemo(() => enjeux.map((q) => q.id), [enjeux]);
   const ordreT = useMemo(() => Object.keys(themes), [themes]);
-  const parId = useMemo(() => Object.fromEntries(questions.map((q) => [q.id, q])), [questions]);
+  const parId = useMemo(() => Object.fromEntries(enjeux.map((q) => [q.id, q])), [enjeux]);
   const [etat, setEtat] = useState<Etat | null>(null);
   const [versionDiff, setVersionDiff] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -93,7 +100,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
       }
       const d = decoder(code, ordreQ, ordreT, version);
       if (!d) {
-        setErreur('invalide');
+        setErreur(estAncienLien(code) ? 'ancien' : 'invalide');
         return;
       }
       setErreur(null);
@@ -120,14 +127,25 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
     if (!etat || !candidats) return;
     // Laisse le navigateur afficher « calcul en cours » avant le bootstrap (1 000 tirages par candidat).
     const t = setTimeout(() => {
-      const r = calculer({ reponses: etat.reponses, importance: etat.importance }, { questions }, candidatsActifs(candidats));
+      const r = calculer({ reponses: etat.reponses, importance: etat.importance }, { enjeux }, candidatsActifs(candidats));
       setRes(r);
       const n = Math.min(Math.max(3, r.peloton_de_tete.length), 5);
       setDetail(r.classement.slice(0, n).map((x) => x.slug));
     }, 30);
     return () => clearTimeout(t);
-  }, [etat, candidats, questions]);
+  }, [etat, candidats, enjeux]);
 
+  if (erreur === 'ancien') {
+    return (
+      <Alert role="status">
+        <AlertTitle>Ce lien vient de l'ancien questionnaire</AlertTitle>
+        <AlertDescription>
+          Le questionnaire est passé des affirmations (« d'accord / pas d'accord ») aux dilemmes entre deux options : les réponses de ce lien n'ont plus le même sens et ne peuvent pas être recalculées.{' '}
+          <a href={`${base}test/`}>Refaire le test</a>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   if (erreur === 'vide' || erreur === 'invalide') {
     return (
       <Alert role="status">
@@ -244,12 +262,15 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
         <li key={qid} className="border-t-[length:var(--brut-border)] border-border pt-3">
           <p className="font-semibold">
             <a className="lien" href={`${base}questions/${qid}/`}>
-              {q.texte}
+              {titreEnjeu(q)}
             </a>
           </p>
           <p className="mt-1 text-sm">
-            Vous : <strong>{echelle[String(etat.reponses[qid])]}</strong> ({signe(etat.reponses[qid]!)}) · {c.nom} : <strong>{echelle[String(p.valeur)]}</strong> ({signe(p.valeur!)})
+            Vous : <strong>{libellePosition(etat.reponses[qid], q)}</strong> · {c.nom} : <strong>{libellePosition(p.valeur, q)}</strong>
           </p>
+          <div className="mt-2 max-w-md">
+            <Axe e={q} marques={[{ valeur: etat.reponses[qid], signe: 'Vous', plein: true }, { valeur: p.valeur, signe: initiales(c.nom) }]} />
+          </div>
           {p.citation && <blockquote className="mt-2 border-l-4 border-primary pl-3 text-sm">« {p.citation} »</blockquote>}
           <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {p.source && (
@@ -330,7 +351,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
         </p>
         {versionDiff && (
           <Alert role="note">
-            <AlertTitle>Lien créé avec une version antérieure des questions</AlertTitle>
+            <AlertTitle>Lien créé avec une version antérieure des enjeux</AlertTitle>
             <AlertDescription>Les positions des candidats ont pu évoluer depuis : le résultat est recalculé avec les données actuelles.</AlertDescription>
           </Alert>
         )}
@@ -347,12 +368,12 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
             </h2>
             {indiscernables && (
               <p className="mt-2 text-sm font-semibold">
-                Ces trois-là, comme {res.peloton_de_tete.length - 3 > 0 ? `${res.peloton_de_tete.length - 3} autre${res.peloton_de_tete.length - 3 > 1 ? 's' : ''}` : 'les autres du peloton'}, ne peuvent pas être départagés : leur ordre n'est pas significatif.{etat.mode !== 'long' && ' Le mode long resserre les marges.'}
+                Ces trois-là, comme {res.peloton_de_tete.length - 3 > 0 ? `${res.peloton_de_tete.length - 3} autre${res.peloton_de_tete.length - 3 > 1 ? 's' : ''}` : 'les autres du peloton'}, ne peuvent pas être départagés : leur ordre n'est pas significatif.{etat.mode !== 'complet' && ' Le mode complet resserre les marges.'}
               </p>
             )}
             {res.nb_reponses < 10 && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Avec {res.nb_reponses} réponse{res.nb_reponses > 1 ? 's' : ''}, ce résultat donne une tendance. Le mode moyen ou long le précise.
+                Avec {res.nb_reponses} réponse{res.nb_reponses > 1 ? 's' : ''}, ce résultat donne une tendance. Le mode adaptatif ou complet le précise.
               </p>
             )}
             <ul className="mt-5 grid grid-cols-3 gap-3 sm:gap-6">
@@ -381,7 +402,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
                   <strong>
                     {res.peloton_de_tete.length} candidats sont dans la marge d'incertitude du premier
                   </strong>{' '}
-                  : leur ordre n'est pas significatif.{etat.mode !== 'long' && ' Le mode long resserre les marges.'}
+                  : leur ordre n'est pas significatif.{etat.mode !== 'complet' && ' Le mode complet resserre les marges.'}
                 </>
               ) : (
                 <>Le premier se détache : aucun autre candidat n'est dans sa marge d'incertitude.</>
@@ -401,7 +422,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           <CarteAxes
             carte={carte}
             noms={Object.fromEntries(candidats.map((c) => [c.slug, c.nom]))}
-            textes={Object.fromEntries(questions.map((q) => [q.id, q.texte]))}
+            poles={Object.fromEntries(enjeux.map((q) => [q.id, { pole_a: q.pole_a, pole_b: q.pole_b }]))}
             reponses={etat.reponses}
           />
           <GrilleThemes candidats={res.classement.slice(0, Math.min(8, Math.max(5, res.peloton_de_tete.length)))} themes={themes} />
@@ -539,10 +560,11 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
               <p className="mt-2 text-sm text-muted-foreground">Répondez aux questions supplémentaires sans recommencer : vos réponses sont gardées.</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 {SUIVANT[etat.mode]!.map((m) => {
-                  const nouvelles = questions.filter((q) => NIVEAUX_DU_MODE[m].includes(q.niveau) && !(q.id in etat.reponses)).length;
+                  const posees = Object.keys(etat.reponses).length;
+                  const nouvelles = m === 'complet' ? `+${enjeux.length - posees} questions` : `jusqu'à ${Math.max(0, MAX_ADAPTATIF - posees)} questions de plus`;
                   return (
                     <a key={m} className="brut-control brut-focus inline-flex h-10 items-center gap-2 bg-primary px-4 text-sm text-primary-foreground" href={`${base}test/#reprendre=${code}&vers=${m}`}>
-                      Passer au mode {m} (+{nouvelles} questions)
+                      Passer au mode {m} ({nouvelles})
                       <Icone nom="arrow-right" taille={16} />
                     </a>
                   );
@@ -550,7 +572,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
               </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-muted-foreground">Vous avez répondu au mode le plus complet ({NB.long} questions).</p>
+            <p className="mt-2 text-sm text-muted-foreground">Vous avez répondu au mode le plus complet ({enjeux.length} questions).</p>
           )}
           <ul className="mt-4 grid gap-2 text-sm">
             <li>

@@ -6,6 +6,7 @@
       "numberOfRuns": 1,
       "url": [
         "http://localhost:4322/boussole-2027-site/?theme=sombre",
+        "http://localhost:4322/boussole-2027-site/resultat/rapide/?theme=sombre#2.20261021.r.4821.___be___x___bc___c_bda_______a_x______a_.21113111",
         "http://localhost:4322/boussole-2027-site/resultat/moyen/?theme=sombre#1.20261021.m.a_db_eca__d_be_cad__bec__ad__beca__dbe__.21111311",
         "http://localhost:4322/boussole-2027-site/candidats/jean-lassalle/?theme=sombre",
         "http://localhost:4322/boussole-2027-site/calendrier/?theme=sombre"

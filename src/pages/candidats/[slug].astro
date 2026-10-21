@@ -4,7 +4,7 @@ import Icone from '../../components/Icone';
 import Portrait from '../../components/Portrait.astro';
 import Position from '../../components/Position.astro';
 import Couverture from '../../components/graphiques/Couverture';
-import { candidats, candidatsRetires, dateFr, lien, listeQuestions, positionsConnues, questionsParTheme } from '../../lib/donnees';
+import { candidats, candidatsRetires, dateFr, enjeuxParTheme, lien, listeEnjeux, positionsConnues, titreEnjeu } from '../../lib/donnees';
 import { CONFIANCE } from '../../lib/types';
 import type { Candidat } from '../../lib/types';
 
@@ -15,16 +15,16 @@ const { c } = Astro.props as { c: Candidat };
 const connues = positionsConnues(c);
 const parConfiance = Object.keys(CONFIANCE).map((k) => ({
   k,
-  n: listeQuestions.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.confiance === k).length,
+  n: listeEnjeux.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.confiance === k).length,
 }));
-const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.relu).length;
+const relues = listeEnjeux.filter((q) => c.positions[q.id]?.valeur != null && c.positions[q.id]?.relu).length;
 ---
 
 <Base
   titre={c.nom}
-  description={`Positions de ${c.nom} (${c.parti}) sur les 40 questions de la Boussole présidentielle 2027, avec les citations et les sources.`}
+  description={`Positions de ${c.nom} (${c.parti}) sur les ${listeEnjeux.length} enjeux de la Boussole présidentielle 2027, avec les citations et les sources.`}
   image={`og/candidats/${c.slug}.png`}
-  imageAlt={`Fiche de ${c.nom} (${c.parti}) : ${connues} positions sourcées sur ${listeQuestions.length}.`}
+  imageAlt={`Fiche de ${c.nom} (${c.parti}) : ${connues} positions sourcées sur ${listeEnjeux.length}.`}
 >
   <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('candidats/')}>Candidats</a> <span aria-hidden="true">›</span> {c.nom}</nav>
   <header class="entree mt-6 flex flex-col gap-6 sm:flex-row">
@@ -36,7 +36,7 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
         <dt class="font-semibold">Statut</dt><dd>{c.statut}</dd>
         <dt class="font-semibold">Programme</dt>
         <dd>{c.programme ?? 'non précisé'}{c.programme_url && <> · <a class="lien inline-flex items-center gap-1" href={c.programme_url}>{c.programme === 'disponible' ? 'consulter le programme' : c.programme === 'partiel' ? 'consulter les propositions publiées' : 'site de campagne'}<span class="sr-only"> (site externe)</span><Icone client:visible nom="external-link" taille={14} /></a></>}</dd>
-        <dt class="font-semibold">Positions connues</dt><dd>{connues} sur {listeQuestions.length} ({relues} relues par un humain)</dd>
+        <dt class="font-semibold">Positions connues</dt><dd>{connues} sur {listeEnjeux.length} ({relues} relues par un humain)</dd>
         <dt class="font-semibold">Confiance</dt><dd>{parConfiance.map((p) => `${p.n} ${CONFIANCE[p.k].libelle.toLowerCase()}`).join(' · ')}</dd>
         {c.mis_a_jour && <><dt class="font-semibold">Fiche mise à jour</dt><dd>{dateFr(c.mis_a_jour)}</dd></>}
       </dl>
@@ -46,7 +46,7 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
 
   <div class="mt-8">
     <Couverture
-      total={listeQuestions.length}
+      total={listeEnjeux.length}
       programme={parConfiance.find((p) => p.k === 'programme')!.n}
       declaration={parConfiance.find((p) => p.k === 'declaration')!.n}
       deduite={parConfiance.find((p) => p.k === 'deduite')!.n}
@@ -56,17 +56,17 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
 
   <nav aria-label="Thèmes" class="mt-10">
     <ul class="flex flex-wrap gap-2 text-sm">
-      {questionsParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#${t.theme}`}>{t.libelle}</a></li>)}
+      {enjeuxParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#${t.theme}`}>{t.libelle}</a></li>)}
     </ul>
   </nav>
 
-  {questionsParTheme.map((t) => (
+  {enjeuxParTheme.map((t) => (
     <section id={t.theme} class="mt-12 scroll-mt-6" aria-labelledby={`titre-${t.theme}`}>
       <h2 id={`titre-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
       <ul class="mt-5 grid gap-5" data-cascade>
-        {t.questions.map((q) => (
+        {t.enjeux.map((q) => (
           <li>
-            <Position position={c.positions[q.id]} titre={q.texte} titreHref={lien(`questions/${q.id}/`)} />
+            <Position position={c.positions[q.id]} enjeu={q} titre={titreEnjeu(q)} titreHref={lien(`questions/${q.id}/`)} />
           </li>
         ))}
       </ul>

@@ -8,17 +8,22 @@ export interface Tiers {
   attendu: number;
   ratio: number | null;
 }
-export interface Equilibre {
-  mode: string;
-  questions: number;
-  poleA: number;
-  poleB: number;
-  transversales: number;
-  indeterminees: number;
+/** Section 2 du rapport (format 2) : pôle de chaque enjeu proche du côté « gauche » de l'axe calculé. */
+export interface Poles {
+  a: number;
+  b: number;
+  transversaux: number;
+  indetermines: number;
 }
+export const MODES_AUDIT = ['complet', 'rapide', 'adaptatif'] as const;
+export type ModeAudit = (typeof MODES_AUDIT)[number];
 export interface ChiffresAudit {
-  tiers: Record<'long' | 'rapide', Tiers[]>;
-  equilibre: Equilibre[];
+  /** Modes présents dans le rapport (complet et rapide au moins), dans cet ordre. */
+  modes: ModeAudit[];
+  tiers: Partial<Record<ModeAudit, Tiers[]>>;
+  /** Nombre de profils aléatoires par mode. */
+  profils: Partial<Record<ModeAudit, number>>;
+  poles: Poles;
 }
 
 const cellules = (ligne: string) => ligne.split('|').slice(1, -1).map((c) => c.trim());
@@ -44,15 +49,20 @@ export function lireAudit(md: string): ChiffresAudit | null {
     tableApres(md, `### Mode ${mode}`, "| Tiers de l'axe | 1er observé | Attendu | Ratio |")
       .filter((c) => c[0] !== 'non placé')
       .map((c) => ({ tiers: c[0], observe: Number(c[1]), attendu: Number(c[2]), ratio: nombre(c[3]) }));
-  const equilibre = tableApres(md, '**Équilibre global**', '| Mode | Questions |').map((c) => ({
-    mode: c[0],
-    questions: Number(c[1]),
-    poleA: Number(c[2]),
-    poleB: Number(c[3]),
-    transversales: Number(c[4]),
-    indeterminees: Number(c[5]),
-  }));
-  const res = { tiers: { long: tiers('long'), rapide: tiers('rapide') }, equilibre };
-  if (!res.tiers.long.length || !res.tiers.rapide.length || !res.equilibre.length) return null;
-  return res;
+  const t: Partial<Record<ModeAudit, Tiers[]>> = {};
+  const profils: Partial<Record<ModeAudit, number>> = {};
+  for (const m of MODES_AUDIT) {
+    const l = tiers(m);
+    if (l.length) t[m] = l;
+    const n = md.match(new RegExp(`### Mode ${m} \\((\\d+) profils`));
+    if (n) profils[m] = Number(n[1]);
+  }
+  const p = md.match(/Pôle proche de la gauche de l'axe : A pour (\d+) enjeux, B pour (\d+), (\d+) transversaux, (\d+) indéterminés/);
+  if (!t.complet || !t.rapide || !p) return null;
+  return {
+    modes: MODES_AUDIT.filter((m) => t[m]),
+    tiers: t,
+    profils,
+    poles: { a: Number(p[1]), b: Number(p[2]), transversaux: Number(p[3]), indetermines: Number(p[4]) },
+  };
 }

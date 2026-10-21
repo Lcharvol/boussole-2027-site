@@ -1,87 +1,118 @@
 // Questionnaire (îlot React). Tout se passe dans le navigateur : rien n'est envoyé ni enregistré.
-// À la fin, les réponses sont encodées dans le fragment de l'URL de la page de résultat (#…),
+// Chaque question est un dilemme entre deux pôles, sur 5 crans. Le tirage (enjeux posés, ordre mêlant les
+// thèmes, formulation, côté de chaque pôle) reproduit scripts/tirage.py du skill à partir d'une graine.
+// À la fin, les réponses et la graine sont encodées dans le fragment de l'URL de la page de résultat (#…),
 // que le navigateur ne transmet jamais au serveur.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import Icone from './Icone';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress, ProgressLabel } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { decoder, encoder, type Etat } from '@/lib/partage';
-import { MODES, NIVEAUX_DU_MODE, type Mode, type Question } from '@/lib/types';
+import { decoder, encoder, estAncienLien, type Etat } from '@/lib/partage';
+import type { CandidatCalcul } from '@/lib/score';
+import { MAX_ADAPTATIF, MODES as MODES_TIRAGE, nouvelleGraine, presenter, RAPIDE, tirer, type EnjeuTirage, type QuestionTiree } from '@/lib/tirage';
+import { MODES, type Mode } from '@/lib/types';
 
 interface Props {
-  questions: Question[];
-  themes: Record<string, string>;
-  echelle: Record<string, string>;
-  version: string;
+  referentiel: { version: string; themes: Record<string, string>; enjeux: EnjeuTirage[] };
+  candidats: CandidatCalcul[];
   base: string;
   classe?: boolean;
 }
 
 const MAX_PRIORITES = 3;
-const NB: Record<Mode, number> = { rapide: 8, moyen: 24, long: 40 };
-// touche : raccourci clavier (1 à 5 de « tout à fait d'accord » à « pas du tout d'accord », 0 pour passer).
-const OPTIONS: { v: string; cle: string; touche: string }[] = [
-  { v: '2', cle: '2', touche: '1' },
-  { v: '1', cle: '1', touche: '2' },
-  { v: '0', cle: '0', touche: '3' },
-  { v: '-1', cle: '-1', touche: '4' },
-  { v: '-2', cle: '-2', touche: '5' },
-  { v: 'passe', cle: 'null', touche: '0' },
+// Crans de gauche à droite ; touche : raccourci clavier (1 à 5 de gauche à droite, 0 pour passer).
+const CRANS = [
+  { court: 'Nettement', touche: '1' },
+  { court: 'Plutôt', touche: '2' },
+  { court: 'Entre les deux', touche: '3' },
+  { court: 'Plutôt', touche: '4' },
+  { court: 'Nettement', touche: '5' },
 ];
 // Affiché seulement sur les appareils avec souris (et donc, en général, un clavier).
 const SI_CLAVIER = 'hidden [@media(hover:hover)_and_(pointer:fine)]:inline-flex';
 
-type Etape = { type: 'mode' } | { type: 'theme'; i: number } | { type: 'priorites' };
+type Etape = { type: 'mode' } | { type: 'question'; i: number } | { type: 'priorites' } | { type: 'ancien' };
 
-export default function Test({ questions, themes, echelle, version, base, classe = false }: Props) {
-  const ordreQ = useMemo(() => questions.map((q) => q.id), [questions]);
+/** Ordre dans lequel des enjeux déjà posés l'ont été, rejoué à partir de la graine (modification des réponses). */
+function ordreRejoue(mode: Mode, graine: number, reponses: Record<string, number | null>, ref: Props['referentiel'], candidats: CandidatCalcul[]): string[] {
+  const ordre: string[] = [];
+  if (mode === 'adaptatif') {
+    const rep: Record<string, number | null> = {};
+    for (;;) {
+      const t = tirer('adaptatif', graine, { reponses: rep }, ref, candidats);
+      const lot = t.questions.map((q) => q.enjeu).filter((e) => e in reponses);
+      if (t.fin || !lot.length) break;
+      for (const e of lot) {
+        rep[e] = reponses[e];
+        ordre.push(e);
+      }
+    }
+  } else ordre.push(...tirer(mode, graine, {}, ref, candidats).questions.map((q) => q.enjeu).filter((e) => e in reponses));
+  // Enjeux posés dans un autre mode (passage au mode supérieur) : à la suite, dans l'ordre des données.
+  return [...ordre, ...ref.enjeux.map((e) => e.id).filter((e) => e in reponses && !ordre.includes(e))];
+}
+
+export default function Test({ referentiel, candidats, base, classe = false }: Props) {
+  const { version, themes } = referentiel;
+  const ordreE = useMemo(() => referentiel.enjeux.map((e) => e.id), [referentiel]);
   const ordreT = useMemo(() => Object.keys(themes), [themes]);
+  const parId = useMemo(() => Object.fromEntries(referentiel.enjeux.map((e) => [e.id, e])), [referentiel]);
   const [mode, setMode] = useState<Mode | null>(null);
+  const [graine, setGraine] = useState(0);
+  // Réponses sur l'axe des pôles (-2 = pôle A nettement … +2 = pôle B nettement), null = « je passe ».
   const [reponses, setReponses] = useState<Record<string, number | null | undefined>>({});
   const [importance, setImportance] = useState<Record<string, number>>({});
-  // Questions déjà posées lors d'un passage précédent (passage au mode supérieur) : on ne les repose pas.
-  const [dejaPosees, setDejaPosees] = useState<Set<string>>(new Set());
+  // Questions de ce passage, dans l'ordre du tirage (les lots du mode adaptatif s'ajoutent au fur et à mesure).
+  const [file, setFile] = useState<QuestionTiree[]>([]);
+  // Enjeux posés lors d'un passage précédent (passage au mode supérieur) : gardés, pas reposés.
+  const [anciennes, setAnciennes] = useState<string[]>([]);
   const [etape, setEtape] = useState<Etape>({ type: 'mode' });
   const [repriseDe, setRepriseDe] = useState<Mode | null>(null);
   const [modification, setModification] = useState(false);
+  const [raisonFin, setRaisonFin] = useState<string | null>(null);
   const titreRef = useRef<HTMLHeadingElement>(null);
   const premierRendu = useRef(true);
 
-  // Reprise : #reprendre=<code>&vers=<mode> (depuis la page de résultat).
+  // Reprise : #reprendre=<code>&vers=<mode> ou &modifier=1 (depuis la page de résultat).
   useEffect(() => {
     const params = new URLSearchParams(location.hash.slice(1));
     const code = params.get('reprendre');
     const vers = params.get('vers') as Mode | null;
     const modifier = params.has('modifier');
-    if (!code || (!modifier && (!vers || !(vers in NB)))) return;
-    const d = decoder(code, ordreQ, ordreT, version);
-    if (!d) return;
-    setReponses(d.etat.reponses);
-    setImportance(d.etat.importance);
-    if (modifier) {
-      // Modification : toutes les questions du mode sont reposées, avec les réponses déjà données.
-      setModification(true);
-      setMode(d.etat.mode);
-    } else {
-      setDejaPosees(new Set(Object.keys(d.etat.reponses)));
-      setRepriseDe(d.etat.mode);
-      setMode(vers);
-    }
-    setEtape({ type: 'theme', i: 0 });
+    if (!code) return;
     history.replaceState(null, '', location.pathname);
-  }, [ordreQ, ordreT, version]);
+    if (estAncienLien(code)) {
+      setEtape({ type: 'ancien' });
+      return;
+    }
+    if (!modifier && (!vers || !MODES_TIRAGE.includes(vers))) return;
+    const d = decoder(code, ordreE, ordreT, version);
+    if (!d) return;
+    const { etat } = d;
+    setReponses(etat.reponses);
+    setImportance(etat.importance);
+    setGraine(etat.graine);
+    if (modifier) {
+      // Modification : les questions déjà posées sont reposées, dans leur ordre, avec les réponses données.
+      setModification(true);
+      setMode(etat.mode);
+      setFile(ordreRejoue(etat.mode, etat.graine, etat.reponses, referentiel, candidats).map((e) => presenter(parId[e], themes, etat.graine)));
+      setEtape({ type: 'question', i: 0 });
+    } else {
+      setAnciennes(Object.keys(etat.reponses));
+      setRepriseDe(etat.mode);
+      setMode(vers);
+      const t = tirer(vers!, etat.graine, { reponses: etat.reponses }, referentiel, candidats);
+      setFile(t.questions);
+      if (t.fin) setRaisonFin(t.raison);
+      setEtape(t.fin ? { type: 'priorites' } : { type: 'question', i: 0 });
+    }
+  }, [ordreE, ordreT, version, referentiel, candidats, parId, themes]);
 
-  const aPoser = useMemo(() => {
-    if (!mode) return [];
-    return questions.filter((q) => NIVEAUX_DU_MODE[mode].includes(q.niveau) && !dejaPosees.has(q.id));
-  }, [mode, questions, dejaPosees]);
-  const etapesThemes = useMemo(
-    () => ordreT.map((t) => ({ theme: t, questions: aPoser.filter((q) => q.theme === t) })).filter((e) => e.questions.length),
-    [aPoser, ordreT],
-  );
-  const repondues = aPoser.filter((q) => reponses[q.id] !== undefined).length;
+  const repondues = file.filter((q) => reponses[q.enjeu] !== undefined).length;
 
   // Les réponses ne sont gardées nulle part : on prévient avant de quitter la page en cours de test.
   const envoi = useRef(false);
@@ -101,78 +132,106 @@ export default function Test({ questions, themes, echelle, version, base, classe
       premierRendu.current = false;
       return;
     }
-    titreRef.current?.focus();
-    titreRef.current?.scrollIntoView({ block: 'start' });
+    // Le haut de l'étape (numéro de la question, thème) revient à l'écran, puis le focus va au titre.
+    const zone = titreRef.current?.closest('section');
+    zone?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    titreRef.current?.focus({ preventScroll: true });
   }, [etape]);
 
   function choisirMode(m: Mode) {
+    const g = nouvelleGraine();
     setMode(m);
-    setEtape({ type: 'theme', i: 0 });
+    setGraine(g);
+    setFile(tirer(m, g, {}, referentiel, candidats).questions);
+    setEtape({ type: 'question', i: 0 });
+  }
+
+  /** Réponses à transmettre au tirage et au calcul : toute question posée sans réponse vaut « je passe ». */
+  function posees(rep = reponses): Record<string, number | null> {
+    const r: Record<string, number | null> = {};
+    for (const e of anciennes) r[e] = rep[e] ?? null;
+    for (const q of file) r[q.enjeu] = rep[q.enjeu] ?? null;
+    return r;
+  }
+
+  /** Après la dernière question de la file : lot suivant (mode adaptatif), sinon les priorités. */
+  function apresDerniere(rep = reponses) {
+    const t = tirer(mode!, graine, { reponses: posees(rep) }, referentiel, candidats);
+    if (t.questions.length) {
+      setFile((f) => [...f, ...t.questions]);
+      setEtape({ type: 'question', i: file.length });
+    } else {
+      setRaisonFin(t.raison);
+      setEtape({ type: 'priorites' });
+    }
+  }
+
+  function suivante(i: number, rep = reponses) {
+    if (i + 1 < file.length) setEtape({ type: 'question', i: i + 1 });
+    else apresDerniere(rep);
+  }
+
+  function repondre(i: number, valeur: number | null, avancer: boolean) {
+    const q = file[i];
+    const rep = { ...reponses, [q.enjeu]: valeur };
+    setReponses(rep);
+    if (avancer) {
+      const doux = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => suivante(i, rep), doux ? 260 : 60);
+    }
   }
 
   function terminer() {
-    const final: Record<string, number | null> = {};
-    for (const [k, v] of Object.entries(reponses)) if (v !== undefined) final[k] = v;
-    // Une question posée restée sans réponse compte comme « je passe ».
-    for (const q of aPoser) if (!(q.id in final)) final[q.id] = null;
-    const etat: Etat = { mode: mode!, reponses: final, importance };
-    const code = encoder(etat, ordreQ, ordreT, version);
+    const etat: Etat = { mode: mode!, graine, reponses: posees(), importance };
+    const code = encoder(etat, ordreE, ordreT, version);
     const cible = classe ? 'classe/resultat/' : `resultat/${mode}/`;
     envoi.current = true;
     location.assign(`${base}${cible}#${code}`);
   }
 
-  const nbPrio = Object.values(importance).filter((v) => v > 1).length;
-  const themesRepondus = ordreT.filter((t) =>
-    questions.some((q) => q.theme === t && (reponses[q.id] !== undefined || aPoser.some((a) => a.id === q.id))),
-  );
-  const numero = (qid: string) => aPoser.findIndex((q) => q.id === qid) + 1;
-  const pourcent = aPoser.length ? Math.round((100 * repondues) / aPoser.length) : 0;
-
-  // Après un clic sur une réponse, amène la question suivante sans réponse à l'écran (pas au clavier :
-  // les flèches changent la réponse dans le groupe, on ne déplace donc rien).
-  // Raccourcis clavier : la touche s'applique à la question qui a le focus, sinon à la première sans
-  // réponse du thème. Le focus passe ensuite à la question suivante sans réponse, ou au bouton
-  // « Thème suivant » (Entrée pour continuer).
-  const themeCourant = etape.type === 'theme' ? etapesThemes[etape.i] : undefined;
-  const cibleClavier = themeCourant?.questions.find((q) => reponses[q.id] === undefined)?.id;
+  // Raccourcis clavier : 1 à 5 de gauche à droite, 0 pour passer ; la question suivante s'affiche ensuite.
+  const courante = etape.type === 'question' ? etape.i : -1;
   useEffect(() => {
-    if (!themeCourant) return;
+    if (courante < 0) return;
     const surTouche = (ev: KeyboardEvent) => {
       if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
-      const t = ev.target as HTMLElement | null;
+      const t = ev.target instanceof Element ? ev.target : null;
       if (t?.closest('textarea, select, [contenteditable="true"], input:not([type="radio"]):not([type="checkbox"])')) return;
-      const option = OPTIONS.find((o) => o.touche === ev.key);
-      if (!option) return;
-      const carte = t?.closest<HTMLElement>('[id^="carte-"]');
-      const qid = carte ? carte.id.slice('carte-'.length) : cibleClavier;
-      const liste = themeCourant.questions;
-      const i = liste.findIndex((q) => q.id === qid);
-      if (i < 0) return;
+      const q = file[courante];
+      if (!q) return;
+      if (ev.key === '0') {
+        ev.preventDefault();
+        repondre(courante, null, true);
+        return;
+      }
+      const k = CRANS.findIndex((c) => c.touche === ev.key);
+      if (k < 0) return;
       ev.preventDefault();
-      setReponses((rep) => ({ ...rep, [qid!]: option.v === 'passe' ? null : Number(option.v) }));
-      const prochaine = liste.slice(i + 1).find((q) => reponses[q.id] === undefined);
-      const doux = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(() => {
-        const focus = prochaine
-          ? document.querySelector<HTMLElement>(`#carte-${prochaine.id} [role="radio"]`)
-          : document.getElementById('bouton-suivant');
-        focus?.focus({ preventScroll: true });
-        document
-          .getElementById(prochaine ? `carte-${prochaine.id}` : 'barre-test')
-          ?.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: prochaine ? 'center' : 'end' });
-      }, 120);
+      repondre(courante, q.options[k].valeur, true);
     };
     window.addEventListener('keydown', surTouche);
     return () => window.removeEventListener('keydown', surTouche);
-  }, [themeCourant, cibleClavier, reponses]);
+  });
 
-  function suivanteApresClic(qid: string, liste: Question[]) {
-    const i = liste.findIndex((q) => q.id === qid);
-    const prochaine = liste.slice(i + 1).find((q) => reponses[q.id] === undefined);
-    const cible = document.getElementById(prochaine ? `carte-${prochaine.id}` : 'barre-test');
-    const doux = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(() => cible?.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: prochaine ? 'center' : 'end' }), 180);
+  if (etape.type === 'ancien') {
+    return (
+      <section aria-labelledby="titre-etape" className="grid gap-6">
+        <Alert role="status">
+          <AlertTitle>
+            <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="font-sans text-lg font-bold outline-none">
+              Ce lien vient de l'ancien questionnaire
+            </h2>
+          </AlertTitle>
+          <AlertDescription>
+            Le questionnaire est passé des affirmations (« d'accord / pas d'accord ») aux dilemmes entre deux options : les anciennes réponses ne peuvent pas être reprises telles quelles. Refaites le test, il ne prend que quelques minutes.
+          </AlertDescription>
+        </Alert>
+        <Button className="h-11 justify-self-start px-5" onClick={() => setEtape({ type: 'mode' })}>
+          Refaire le test
+          <Icone nom="arrow-right" taille={18} />
+        </Button>
+      </section>
+    );
   }
 
   if (etape.type === 'mode') {
@@ -188,16 +247,16 @@ export default function Test({ questions, themes, echelle, version, base, classe
               <button
                 type="button"
                 onClick={() => choisirMode(m.id)}
-                className={`brut-control brut-focus group flex w-full flex-col p-5 text-left ${m.id === 'moyen' ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
+                className={`brut-control brut-focus group flex w-full flex-col p-5 text-left ${m.id === 'adaptatif' ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
               >
                 <span className="flex w-full items-start justify-between gap-3">
                   <span className="font-serif text-3xl font-bold">{m.titre}</span>
-                  {m.id === 'moyen' && <span className="brut-chip bg-card px-2 py-0.5 text-[0.65rem] text-foreground">Recommandé</span>}
+                  {m.id === 'adaptatif' && <span className="brut-chip bg-card px-2 py-0.5 text-[0.65rem] text-foreground">Recommandé</span>}
                 </span>
                 <span className="mt-2 text-sm font-bold">
-                  {NB[m.id]} questions · {m.duree}
+                  {m.nb} · {m.duree}
                 </span>
-                <span className={`mt-3 flex-1 text-sm font-normal ${m.id === 'moyen' ? '' : 'text-muted-foreground'}`}>{m.fiabilite}</span>
+                <span className={`mt-3 flex-1 text-sm font-normal ${m.id === 'adaptatif' ? '' : 'text-muted-foreground'}`}>{m.fiabilite}</span>
                 <span className="mt-5 inline-flex items-center gap-1 text-base font-bold underline decoration-2 underline-offset-4">
                   Commencer <Icone nom="arrow-right" taille={20} />
                 </span>
@@ -205,52 +264,16 @@ export default function Test({ questions, themes, echelle, version, base, classe
             </li>
           ))}
         </ul>
-        <p className="mt-6 text-sm text-muted-foreground">
-          Les modes courts gardent, dans chaque thème, les questions qui départagent le plus les candidats.
+        <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+          Chaque question oppose deux options. Les enjeux sont tirés au hasard, en mêlant les thèmes ; la formulation et le côté où chaque option apparaît changent d'un passage à l'autre, pour qu'aucune ne soit toujours présentée en premier.
         </p>
       </section>
     );
   }
 
-  // Fil des étapes : un bouton par thème, puis les priorités.
-  const fil = (
-    <nav aria-label="Étapes du test" className="relative -mx-4 mb-6 overflow-x-auto px-4 pb-2">
-      <ol className="flex min-w-max gap-2">
-        {etapesThemes.map((e, i) => {
-          const faites = e.questions.filter((q) => reponses[q.id] !== undefined).length;
-          const courant = etape.type === 'theme' && etape.i === i;
-          const complet = faites === e.questions.length;
-          return (
-            <li key={e.theme}>
-              <button
-                type="button"
-                onClick={() => setEtape({ type: 'theme', i })}
-                aria-current={courant ? 'step' : undefined}
-                className={`brut-focus relative flex h-9 items-center gap-1.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-border px-2.5 text-xs font-bold whitespace-nowrap ${courant ? 'bg-foreground text-background' : complet ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'}`}
-              >
-                {complet && !courant && <span aria-hidden="true">✓</span>}
-                {themes[e.theme].split(/[ ,]/)[0]}
-                <span className="sr-only">
-                  {' '}
-                  : {faites} réponse{faites > 1 ? 's' : ''} sur {e.questions.length}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-        <li>
-          <button
-            type="button"
-            onClick={() => setEtape({ type: 'priorites' })}
-            aria-current={etape.type === 'priorites' ? 'step' : undefined}
-            className={`brut-focus flex h-9 items-center rounded-[var(--radius)] border-[length:var(--brut-border)] border-border px-2.5 text-xs font-bold ${etape.type === 'priorites' ? 'bg-foreground text-background' : 'bg-card hover:bg-muted'}`}
-          >
-            Priorités
-          </button>
-        </li>
-      </ol>
-    </nav>
-  );
+  const nbTotal = anciennes.length + file.length;
+  const enCours = mode === 'adaptatif' && etape.type === 'question' && !raisonFin && nbTotal < MAX_ADAPTATIF;
+  const pourcent = file.length ? Math.round((100 * repondues) / file.length) : 0;
 
   // Barre collée en bas de l'écran : progression et navigation toujours à portée de main.
   const barre = (precedent: ReactNode, suivant: ReactNode) => (
@@ -262,7 +285,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
           {modification && ' (modification)'}
         </ProgressLabel>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-          {repondues} / {aPoser.length} réponses
+          {repondues} / {file.length} réponses{enCours && ' pour l’instant'}
         </span>
       </Progress>
       <div className="flex items-center justify-between gap-3">
@@ -272,105 +295,93 @@ export default function Test({ questions, themes, echelle, version, base, classe
     </div>
   );
 
-  if (etape.type === 'theme') {
-    const e = etapesThemes[etape.i];
-    if (!e) {
-      return (
-        <section aria-labelledby="titre-etape">
-          <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="text-2xl font-bold outline-none">
-            Aucune nouvelle question
-          </h2>
-          <Button className="mt-6" onClick={() => setEtape({ type: 'priorites' })}>
-            Continuer
-          </Button>
-        </section>
-      );
-    }
-    const dernier = etape.i === etapesThemes.length - 1;
+  if (etape.type === 'question') {
+    const i = etape.i;
+    const q = file[i];
+    if (!q) return null;
+    const v = reponses[q.enjeu];
+    const k = v === undefined || v === null ? null : q.options.findIndex((o) => o.valeur === v);
+    const valeur = v === undefined ? null : v === null ? 'passe' : String(k);
+    const derniere = i === file.length - 1;
     return (
-      <section aria-labelledby="titre-etape">
-        {fil}
-        <p className="text-sm font-semibold text-muted-foreground">
-          Thème {etape.i + 1} sur {etapesThemes.length}
+      <section aria-labelledby="titre-etape" className="scroll-mt-4">
+        <p className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
+          <span>
+            Question {anciennes.length + i + 1}
+            {mode === 'adaptatif' && !modification ? (enCours ? ` · ${RAPIDE} à ${MAX_ADAPTATIF} au total` : ` sur ${nbTotal}`) : ` sur ${nbTotal}`}
+          </span>
+          <span className="brut-chip bg-secondary px-2 py-0.5 text-[0.7rem] text-secondary-foreground normal-case">{q.theme_libelle}</span>
         </p>
-        <h2 key={e.theme} id="titre-etape" ref={titreRef} tabIndex={-1} className="entree mt-1 scroll-mt-4 text-3xl font-bold outline-none sm:text-4xl">
-          {themes[e.theme]}
-        </h2>
-        <p className={`${SI_CLAVIER} mt-2 flex-wrap items-center gap-1.5 text-sm text-muted-foreground`}>
-          Au clavier : <kbd className="brut-kbd px-1.5 font-mono text-xs">1</kbd> à <kbd className="brut-kbd px-1.5 font-mono text-xs">5</kbd> pour
-          répondre, <kbd className="brut-kbd px-1.5 font-mono text-xs">0</kbd> pour passer, puis <kbd className="brut-kbd px-1.5 font-mono text-xs">Entrée</kbd> sur
-          « Thème suivant ».
-        </p>
-        <ol className="mt-6 grid gap-6">
-          {e.questions.map((q, iq) => {
-            const v = reponses[q.id];
-            const valeur = v === undefined ? null : v === null ? 'passe' : String(v);
-            return (
-              <li
-                key={q.id}
-                id={`carte-${q.id}`}
-                className={`entree brut-panel scroll-mt-24 bg-card p-4 transition-colors sm:p-6 ${v !== undefined ? 'border-foreground' : ''}`}
-                style={{ ['--delai' as string]: `${iq * 90}ms` }}
+        <article key={q.enjeu} id={`carte-${q.enjeu}`} className="entree brut-panel mt-3 bg-card p-4 sm:p-6">
+          {q.contexte && <p className="text-sm leading-relaxed text-muted-foreground">{q.contexte}</p>}
+          <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className={`scroll-mt-4 font-serif text-2xl leading-snug font-semibold text-pretty outline-none sm:text-3xl ${q.contexte ? 'mt-3' : ''}`}>
+            {q.question}
+          </h2>
+          {/* Les deux options, à égalité : même style, côté tiré au hasard. */}
+          <div className="mt-5 hidden items-stretch gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]" aria-hidden="true">
+            <p className="brut-surface flex items-center gap-2 bg-background p-3 font-semibold">
+              <Icone nom="arrow-left" taille={18} />
+              {q.gauche.texte}
+            </p>
+            <span className="self-center text-sm font-bold text-muted-foreground">ou</span>
+            <p className="brut-surface flex items-center justify-end gap-2 bg-background p-3 text-right font-semibold">
+              {q.droite.texte}
+              <Icone nom="arrow-right" taille={18} />
+            </p>
+          </div>
+          <RadioGroup
+            aria-labelledby="titre-etape"
+            value={valeur}
+            onValueChange={(nv) => repondre(i, nv === 'passe' ? null : q.options[Number(nv)].valeur, false)}
+            className="mt-5 grid gap-2 sm:grid-cols-5"
+          >
+            {q.options.map((o, n) => (
+              <label
+                key={n}
+                onPointerUp={() => repondre(i, o.valeur, true)}
+                className="brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground motion-safe:has-[[data-checked]]:animate-[pop_0.28s_ease-out] sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center"
               >
-                <p className="flex items-center justify-between text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                  <span>
-                    Question {numero(q.id)} / {aPoser.length}
-                  </span>
-                  {v === undefined && q.id === cibleClavier && (
-                    <span className={`${SI_CLAVIER} items-center gap-1 normal-case`}>Clavier : touches 1 à 5</span>
-                  )}
-                  {v !== undefined && (
-                    <span className="apparition inline-flex items-center gap-1 normal-case">
-                      <Icone nom="check" taille={14} />
-                      {v === null ? 'Passée' : 'Répondu'}
-                    </span>
-                  )}
-                </p>
-                <p id={`q-${q.id}`} className="mt-2 font-serif text-xl leading-snug font-semibold text-pretty sm:text-2xl">
-                  {q.texte}
-                </p>
-                <RadioGroup
-                  aria-labelledby={`q-${q.id}`}
-                  value={valeur}
-                  onValueChange={(nv) => setReponses((r) => ({ ...r, [q.id]: nv === 'passe' ? null : Number(nv) }))}
-                  className="mt-5 grid gap-2 sm:grid-cols-5"
-                >
-                  {OPTIONS.map((o) => (
-                    <label
-                      key={o.v}
-                      onPointerUp={() => suivanteApresClic(q.id, e.questions)}
-                      className={
-                        o.v === 'passe'
-                          ? 'brut-focus flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-dashed border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted has-[[data-checked]]:border-solid has-[[data-checked]]:bg-muted has-[[data-checked]]:text-foreground sm:col-span-5 sm:justify-self-start'
-                          : 'brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground motion-safe:has-[[data-checked]]:animate-[pop_0.28s_ease-out] sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center'
-                      }
-                    >
-                      <RadioGroupItem value={o.v} aria-keyshortcuts={o.touche} />
-                      <span>{o.v === 'passe' ? 'Je passe' : echelle[o.cle]}</span>
-                      <kbd aria-hidden="true" className={`${SI_CLAVIER} brut-kbd ml-auto px-1.5 font-mono text-[0.7rem] opacity-70 sm:ml-0`}>
-                        {o.touche}
-                      </kbd>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </li>
-            );
-          })}
-        </ol>
-        <p className="mt-4 text-sm text-muted-foreground">Une question laissée sans réponse est comptée comme « je passe ».</p>
+                <RadioGroupItem value={String(n)} aria-label={o.libelle} aria-keyshortcuts={CRANS[n].touche} />
+                <span className="sm:hidden">{o.libelle}</span>
+                <span className="hidden sm:block" aria-hidden="true">
+                  {CRANS[n].court}
+                  {n !== 2 && <span className="block text-xs font-normal">{n < 2 ? '← à gauche' : 'à droite →'}</span>}
+                </span>
+                <kbd aria-hidden="true" className={`${SI_CLAVIER} brut-kbd ml-auto px-1.5 font-mono text-[0.7rem] opacity-70 sm:ml-0`}>
+                  {CRANS[n].touche}
+                </kbd>
+              </label>
+            ))}
+            <label
+              onPointerUp={() => repondre(i, null, true)}
+              className="brut-focus flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-dashed border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted has-[[data-checked]]:border-solid has-[[data-checked]]:bg-muted has-[[data-checked]]:text-foreground sm:col-span-5 sm:justify-self-start"
+            >
+              <RadioGroupItem value="passe" aria-keyshortcuts="0" />
+              <span>Je passe</span>
+              <kbd aria-hidden="true" className={`${SI_CLAVIER} brut-kbd ml-auto px-1.5 font-mono text-[0.7rem] opacity-70 sm:ml-0`}>
+                0
+              </kbd>
+            </label>
+          </RadioGroup>
+        </article>
+        <p className={`${SI_CLAVIER} mt-3 flex-wrap items-center gap-1.5 text-sm text-muted-foreground`}>
+          Au clavier : <kbd className="brut-kbd px-1.5 font-mono text-xs">1</kbd> à <kbd className="brut-kbd px-1.5 font-mono text-xs">5</kbd> de gauche à droite,{' '}
+          <kbd className="brut-kbd px-1.5 font-mono text-xs">0</kbd> pour passer.
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">Une question laissée sans réponse est comptée comme « je passe ».</p>
         {barre(
           <Button
             variant="outline"
             className="h-11 px-4"
-            onClick={() => setEtape(etape.i === 0 ? (repriseDe ? { type: 'theme', i: 0 } : { type: 'mode' }) : { type: 'theme', i: etape.i - 1 })}
-            disabled={etape.i === 0 && !!repriseDe}
+            onClick={() => setEtape(i === 0 ? (repriseDe || modification ? { type: 'question', i: 0 } : { type: 'mode' }) : { type: 'question', i: i - 1 })}
+            disabled={i === 0 && (!!repriseDe || modification)}
           >
             <Icone nom="arrow-left" taille={18} />
-            <span className="hidden sm:inline">{etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}</span>
+            <span className="hidden sm:inline">{i === 0 ? 'Changer de mode' : 'Question précédente'}</span>
             <span className="sm:hidden">Retour</span>
           </Button>,
-          <Button id="bouton-suivant" className="h-11 px-5" onClick={() => setEtape(dernier ? { type: 'priorites' } : { type: 'theme', i: etape.i + 1 })}>
-            {dernier ? 'Mes priorités' : 'Thème suivant'}
+          <Button id="bouton-suivant" className="h-11 px-5" onClick={() => suivante(i)}>
+            {derniere && !enCours ? 'Mes priorités' : 'Question suivante'}
             <Icone nom="arrow-right" taille={18} />
           </Button>,
         )}
@@ -379,9 +390,15 @@ export default function Test({ questions, themes, echelle, version, base, classe
   }
 
   // Priorités
+  const nbPrio = Object.values(importance).filter((x) => x > 1).length;
+  const themesRepondus = ordreT.filter((t) => [...anciennes, ...file.map((q) => q.enjeu)].some((e) => parId[e]?.theme === t));
   return (
     <section aria-labelledby="titre-etape">
-      {fil}
+      {raisonFin && mode === 'adaptatif' && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Fin des questions du mode adaptatif après {nbTotal} questions : {raisonFin}.
+        </p>
+      )}
       <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="text-3xl font-bold outline-none sm:text-4xl">
         Quels thèmes comptent le plus pour vous ?
       </h2>
@@ -431,7 +448,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
       </fieldset>
       <p className="mt-6 text-sm text-muted-foreground">Le calcul se fait dans votre navigateur. Vos réponses ne sont ni envoyées, ni enregistrées.</p>
       {barre(
-        <Button variant="outline" className="h-11 px-4" onClick={() => setEtape({ type: 'theme', i: Math.max(0, etapesThemes.length - 1) })}>
+        <Button variant="outline" className="h-11 px-4" disabled={!file.length} onClick={() => setEtape({ type: 'question', i: Math.max(0, file.length - 1) })}>
           <Icone nom="arrow-left" taille={18} />
           <span className="hidden sm:inline">Revenir aux questions</span>
           <span className="sm:hidden">Retour</span>

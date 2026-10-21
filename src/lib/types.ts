@@ -1,20 +1,33 @@
-// Types des données du skill (data/questions.json et data/candidats/*.json).
+// Types des données du skill, format 2 (data/enjeux.json et data/candidats/*.json).
+import type { ModeTirage } from './tirage';
 
-export type Niveau = 'rapide' | 'moyen' | 'long';
-export type Mode = Niveau;
+export type Mode = ModeTirage;
 
-export interface Question {
+export interface Variante {
   id: string;
-  theme: string;
-  texte: string;
-  niveau: Niveau;
+  question: string;
+  /** Formulation du pôle A (valeur -2). */
+  a: string;
+  /** Formulation du pôle B (valeur +2). */
+  b: string;
+  validee: boolean;
 }
 
-export interface Questions {
+export interface Enjeu {
+  id: string;
+  theme: string;
+  pole_a: string;
+  pole_b: string;
+  contexte: string | null;
+  variantes: Variante[];
+}
+
+export interface Referentiel {
   version: string;
+  format: 2;
   echelle: Record<string, string>;
   themes: Record<string, string>;
-  questions: Question[];
+  enjeux: Enjeu[];
 }
 
 export interface Position {
@@ -43,9 +56,11 @@ export interface Meta {
   depot: string;
   commit: string | null;
   date_commit: string | null;
-  version_questions: string;
+  /** Branche du skill clonée (null si BOUSSOLE_SKILL_DIR fournit le clone). */
+  branche: string | null;
+  version_enjeux: string;
   version_plugin: string | null;
-  nb_questions: number;
+  nb_enjeux: number;
   nb_candidats: number;
   nb_positions: number;
   nb_positions_relues: number;
@@ -54,7 +69,7 @@ export interface Meta {
 
 export interface Donnees {
   meta: Meta;
-  questions: Questions;
+  enjeux: Referentiel;
   candidats: Candidat[];
 }
 
@@ -69,16 +84,10 @@ export interface Photo {
 
 export type Photos = Record<string, { wikidata: string | null; photo: Photo | null }>;
 
-export const NIVEAUX_DU_MODE: Record<Mode, Niveau[]> = {
-  rapide: ['rapide'],
-  moyen: ['rapide', 'moyen'],
-  long: ['rapide', 'moyen', 'long'],
-};
-
-export const MODES: { id: Mode; titre: string; duree: string; fiabilite: string }[] = [
-  { id: 'rapide', titre: 'Rapide', duree: '≈ 2 min', fiabilite: 'Une tendance : les écarts entre candidats proches ne sont pas significatifs.' },
-  { id: 'moyen', titre: 'Moyen', duree: '≈ 6 min', fiabilite: "Bon compromis pour départager des candidats d'une même famille politique." },
-  { id: 'long', titre: 'Long', duree: '≈ 12 min', fiabilite: 'Le plus fiable. Recommandé si vous hésitez entre plusieurs candidats.' },
+export const MODES: { id: Mode; titre: string; nb: string; duree: string; fiabilite: string }[] = [
+  { id: 'rapide', titre: 'Rapide', nb: '12 questions', duree: '≈ 3 min', fiabilite: 'Une tendance : les écarts entre candidats proches ne sont pas significatifs.' },
+  { id: 'adaptatif', titre: 'Adaptatif', nb: '12 à 32 questions', duree: '≈ 4 à 8 min', fiabilite: "Après 12 questions, ajoute celles qui départagent les candidats encore proches de vous, jusqu'à ce que le premier se détache." },
+  { id: 'complet', titre: 'Complet', nb: '40 questions', duree: '≈ 10 min', fiabilite: 'Tous les enjeux. Le plus fiable si vous hésitez entre plusieurs candidats.' },
 ];
 
 export const CONFIANCE: Record<string, { libelle: string; aide: string }> = {
@@ -87,4 +96,5 @@ export const CONFIANCE: Record<string, { libelle: string; aide: string }> = {
   deduite: { libelle: 'Déduite', aide: 'Position du parti ou programme 2022, non démentie (poids 0,6).' },
 };
 
-export const VALEURS = [2, 1, 0, -1, -2] as const;
+/** Valeurs de l'axe, du pôle A (-2) au pôle B (+2). */
+export const VALEURS = [-2, -1, 0, 1, 2] as const;

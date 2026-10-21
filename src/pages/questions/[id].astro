@@ -3,37 +3,58 @@ import Base from '../../layouts/Base.astro';
 import Portrait from '../../components/Portrait.astro';
 import Position from '../../components/Position.astro';
 import AxeQuestion from '../../components/graphiques/AxeQuestion';
-import { candidats, lien, listeQuestions, questions, themes } from '../../lib/donnees';
-import { VALEURS, type Question } from '../../lib/types';
+import { candidats, libelleValeur, lien, listeEnjeux, themes, titreEnjeu } from '../../lib/donnees';
+import { VALEURS, type Enjeu } from '../../lib/types';
 
 export function getStaticPaths() {
-  return listeQuestions.map((q) => ({ params: { id: q.id }, props: { q } }));
+  return listeEnjeux.map((e) => ({ params: { id: e.id }, props: { e } }));
 }
-const { q } = Astro.props as { q: Question };
-const i = listeQuestions.findIndex((x) => x.id === q.id);
-const prec = listeQuestions[i - 1];
-const suiv = listeQuestions[i + 1];
-// Groupes par valeur, de « tout à fait d'accord » à « pas du tout d'accord », puis positions inconnues.
+const { e } = Astro.props as { e: Enjeu };
+const i = listeEnjeux.findIndex((x) => x.id === e.id);
+const prec = listeEnjeux[i - 1];
+const suiv = listeEnjeux[i + 1];
+const titre = titreEnjeu(e);
+// Groupes par valeur, du pôle A nettement au pôle B nettement, puis positions inconnues.
 // Dans chaque groupe, l'ordre alphabétique des noms est conservé.
 const groupes = [
-  ...VALEURS.map((v) => ({ v: v as number | null, titre: questions.echelle[String(v)], liste: candidats.filter((c) => c.positions[q.id]?.valeur === v) })),
-  { v: null, titre: 'Position inconnue', liste: candidats.filter((c) => c.positions[q.id]?.valeur == null) },
+  ...VALEURS.map((v) => ({ v: v as number | null, titre: libelleValeur(v, e), liste: candidats.filter((c) => c.positions[e.id]?.valeur === v) })),
+  { v: null, titre: 'Position inconnue', liste: candidats.filter((c) => c.positions[e.id]?.valeur == null) },
 ];
+// Formulations posées dans le test : seules les variantes validées sont tirées quand il y en a (tirage.py).
+const validees = e.variantes.filter((v) => v.validee);
+const posees = validees.length ? validees : e.variantes;
 ---
 
 <Base
-  titre={q.texte}
-  description={`Qui pense quoi : position des candidats à la présidentielle 2027 sur « ${q.texte} », avec les citations et les sources.`}
-  image={`og/questions/${q.id}.png`}
-  imageAlt={`« ${q.texte} » : répartition des positions des candidats.`}
+  titre={titre}
+  description={`Qui pense quoi : position des candidats à la présidentielle 2027 entre « ${e.pole_a} » et « ${e.pole_b} », avec les citations et les sources.`}
+  image={`og/questions/${e.id}.png`}
+  imageAlt={`${e.pole_a} (pôle A) ou ${e.pole_b} (pôle B) : répartition des positions des candidats.`}
 >
-  <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('questions/')}>Qui pense quoi</a> <span aria-hidden="true">›</span> {themes[q.theme]}</nav>
-  <p class="mt-6 brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">{themes[q.theme]} · mode {q.niveau}</p>
-  <h1 class="entree mt-3 text-3xl font-bold leading-tight sm:text-4xl">« {q.texte} »</h1>
-  <p class="mt-4 text-sm text-muted-foreground">Affirmation reprise telle qu'elle est posée dans le test. Les positions sont classées de « tout à fait d'accord » à « pas du tout d'accord », puis par ordre alphabétique.</p>
+  <nav aria-label="Fil d'Ariane" class="text-sm"><a class="lien" href={lien('questions/')}>Qui pense quoi</a> <span aria-hidden="true">›</span> {themes[e.theme]}</nav>
+  <p class="mt-6 brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">{themes[e.theme]}</p>
+  <h1 class="entree mt-3 text-3xl font-bold leading-tight sm:text-4xl">{titre}</h1>
+  <div class="mt-5 grid gap-3 sm:grid-cols-2">
+    <p class="brut-surface bg-card p-4"><span class="block text-xs font-bold tracking-wide text-muted-foreground uppercase">Pôle A</span><span class="mt-1 block text-lg font-semibold">{e.pole_a}</span></p>
+    <p class="brut-surface bg-card p-4 sm:text-right"><span class="block text-xs font-bold tracking-wide text-muted-foreground uppercase">Pôle B</span><span class="mt-1 block text-lg font-semibold">{e.pole_b}</span></p>
+  </div>
+  {e.contexte && <p class="mt-4 max-w-3xl leading-relaxed">{e.contexte}</p>}
+  <p class="mt-4 max-w-3xl text-sm text-muted-foreground">Les deux pôles ont la même dignité : aucun n'est « le bon ». Les positions sont classées du pôle A au pôle B, puis par ordre alphabétique. Dans le test, le côté où chaque pôle apparaît est tiré au hasard.</p>
+
+  <details class="brut-surface mt-5 bg-card px-4 py-3 text-sm">
+    <summary class="cursor-pointer font-bold">Formulations posées dans le test ({posees.length})</summary>
+    <ul class="mt-3 grid gap-3">
+      {posees.map((v) => (
+        <li>
+          <p class="font-semibold">{v.question}</p>
+          <p class="mt-1 text-muted-foreground">A : {v.a} · B : {v.b}</p>
+        </li>
+      ))}
+    </ul>
+  </details>
 
   <div class="mt-8">
-    <AxeQuestion id={`graph-axe-${q.id}`} echelle={questions.echelle} candidats={candidats.map((c) => ({ slug: c.slug, nom: c.nom, valeur: c.positions[q.id]?.valeur ?? null }))} base={lien()} />
+    <AxeQuestion id={`graph-axe-${e.id}`} enjeu={e} candidats={candidats.map((c) => ({ slug: c.slug, nom: c.nom, valeur: c.positions[e.id]?.valeur ?? null }))} base={lien()} />
   </div>
 
   <nav aria-label="Aller à un groupe" class="mt-6">
@@ -55,7 +76,7 @@ const groupes = [
             <li class="flex gap-4">
               <Portrait slug={c.slug} nom={c.nom} taille="sm" />
               <div class="min-w-0 flex-1">
-                <Position position={c.positions[q.id]} titre={`${c.nom} (${c.parti})`} titreHref={lien(`candidats/${c.slug}/`)} />
+                <Position position={c.positions[e.id]} enjeu={e} poles={false} titre={`${c.nom} (${c.parti})`} titreHref={lien(`candidats/${c.slug}/`)} />
               </div>
             </li>
           ))}
@@ -64,8 +85,8 @@ const groupes = [
     </section>
   ))}
 
-  <nav aria-label="Questions voisines" class="mt-12 flex flex-wrap justify-between gap-4 text-sm">
-    {prec ? <a class="lien" href={lien(`questions/${prec.id}/`)}>← {prec.texte}</a> : <span></span>}
-    {suiv && <a class="lien text-right" href={lien(`questions/${suiv.id}/`)}>{suiv.texte} →</a>}
+  <nav aria-label="Enjeux voisins" class="mt-12 flex flex-wrap justify-between gap-4 text-sm">
+    {prec ? <a class="lien" href={lien(`questions/${prec.id}/`)}>← {titreEnjeu(prec)}</a> : <span></span>}
+    {suiv && <a class="lien text-right" href={lien(`questions/${suiv.id}/`)}>{titreEnjeu(suiv)} →</a>}
   </nav>
 </Base>

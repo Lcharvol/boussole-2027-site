@@ -3,7 +3,7 @@
 // - une générique et une par mode de résultat : aucun résultat ni aucun nom (le résultat reste dans le lien) ;
 // - une par candidat : même gabarit pour tous (portrait au même cadrage, nom, parti, statut, couverture,
 //   crédit de la photo) ;
-// - une par question : l'affirmation telle quelle et la répartition des positions, sans aucun nom.
+// - une par enjeu : les deux pôles, à égalité, et la répartition des positions sur l'axe A … B, sans aucun nom.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import satori from 'satori';
@@ -16,7 +16,7 @@ const fonts = [
   { name: 'Inter', data: police(400), weight: 400, style: 'normal' },
   { name: 'Inter', data: police(800), weight: 800, style: 'normal' },
 ];
-const { meta, questions, candidats } = JSON.parse(readFileSync(join(RACINE, 'src/generated/donnees.json'), 'utf8'));
+const { meta, enjeux, candidats } = JSON.parse(readFileSync(join(RACINE, 'src/generated/donnees.json'), 'utf8'));
 const photos = JSON.parse(readFileSync(join(RACINE, 'src/data/photos.json'), 'utf8'));
 
 const C = { fond: '#fbf9f1', encre: '#1d1a16', jaune: '#f2c230', cyan: '#a6e3f2', carte: '#ffffff' };
@@ -48,12 +48,12 @@ function image(surtitre, titre, sousTitre) {
   );
 }
 
-const sous = `${meta.nb_questions} affirmations, ${meta.nb_candidats} candidats, ${meta.nb_positions} positions sourcées par une citation exacte et relues par un humain.`;
+const sous = `${meta.nb_enjeux} dilemmes, ${meta.nb_candidats} candidats, ${meta.nb_positions} positions sourcées par une citation exacte.`;
 const images = {
   generique: image('Présidentielle 2027', 'De quels programmes êtes-vous proche ?', sous),
-  'resultat-rapide': image('Mode rapide · 8 questions', 'J’ai fait la boussole. Et vous ?', sous),
-  'resultat-moyen': image('Mode moyen · 24 questions', 'J’ai fait la boussole. Et vous ?', sous),
-  'resultat-long': image('Mode long · 40 questions', 'J’ai fait la boussole. Et vous ?', sous),
+  'resultat-rapide': image('Mode rapide · 12 questions', 'J’ai fait la boussole. Et vous ?', sous),
+  'resultat-adaptatif': image('Mode adaptatif · 12 à 32 questions', 'J’ai fait la boussole. Et vous ?', sous),
+  'resultat-complet': image(`Mode complet · ${meta.nb_enjeux} questions`, 'J’ai fait la boussole. Et vous ?', sous),
 };
 
 const dossier = join(RACINE, 'public', 'og');
@@ -100,7 +100,7 @@ async function portrait(slug, nom) {
   return h('div', cadre, { type: 'img', props: { src: `data:image/png;base64,${png.toString('base64')}`, width: 270, height: 340, style: { objectFit: 'cover' } } });
 }
 
-const ids = questions.questions.map((q) => q.id);
+const ids = enjeux.enjeux.map((e) => e.id);
 const connue = (c, id) => c.positions?.[id]?.valeur !== null && c.positions?.[id]?.valeur !== undefined;
 let n = 0;
 for (const c of candidats) {
@@ -132,38 +132,48 @@ for (const c of candidats) {
 }
 
 const actifs = candidats.filter((c) => c.statut !== 'retiré');
-for (const q of questions.questions) {
-  const compte = (f) => actifs.filter((c) => connue(c, q.id) && f(c.positions[q.id].valeur)).length;
-  const cases = [
-    ["D'accord", compte((v) => v > 0)],
-    ['Partagés', compte((v) => v === 0)],
-    ["Pas d'accord", compte((v) => v < 0)],
-    ['Position inconnue', actifs.length - compte(() => true)],
+const taillePole = (t) => (t.length > 60 ? 28 : t.length > 40 ? 32 : 38);
+const pole = (lettre, texte, aDroite) =>
+  h(
+    'div',
+    { display: 'flex', flexDirection: 'column', gap: 8, flex: 1, alignItems: aDroite ? 'flex-end' : 'flex-start', textAlign: aDroite ? 'right' : 'left', background: C.carte, border: `4px solid ${C.encre}`, boxShadow: `5px 5px 0 ${C.encre}`, padding: '14px 20px' },
+    h('div', { fontSize: 20, fontWeight: 800, letterSpacing: 1 }, `PÔLE ${lettre}`),
+    h('div', { fontSize: taillePole(texte), fontWeight: 800, lineHeight: 1.12 }, texte),
+  );
+for (const e of enjeux.enjeux) {
+  const compte = (v) => actifs.filter((c) => connue(c, e.id) && c.positions[e.id].valeur === v).length;
+  const crans = [
+    ['A nettement', compte(-2)],
+    ['Plutôt A', compte(-1)],
+    ['Entre les deux', compte(0)],
+    ['Plutôt B', compte(1)],
+    ['B nettement', compte(2)],
   ];
-  const t = `« ${q.texte} »`;
+  const inconnues = actifs.filter((c) => !connue(c, e.id)).length;
   const el = gabarit(
     entete,
     h(
       'div',
-      { display: 'flex', flexDirection: 'column', gap: 22 },
-      puce(`Qui pense quoi · ${questions.themes[q.theme]}`),
-      h('div', { fontSize: t.length > 120 ? 44 : t.length > 80 ? 52 : 60, fontWeight: 800, lineHeight: 1.12, letterSpacing: -1 }, t),
+      { display: 'flex', flexDirection: 'column', gap: 20 },
+      puce(`Qui pense quoi · ${enjeux.themes[e.theme]}`),
+      h('div', { display: 'flex', gap: 20, alignItems: 'stretch' }, pole('A', e.pole_a, false), h('div', { display: 'flex', alignItems: 'center', fontSize: 28, fontWeight: 800 }, 'ou'), pole('B', e.pole_b, true)),
       h(
         'div',
-        { display: 'flex', gap: 14 },
-        ...cases.map(([l, v]) =>
+        { display: 'flex', gap: 10 },
+        ...crans.map(([l, v], i) =>
           h(
             'div',
-            { display: 'flex', flexDirection: 'column', background: C.carte, border: `4px solid ${C.encre}`, boxShadow: `5px 5px 0 ${C.encre}`, padding: '8px 18px', minWidth: 170 },
+            { display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, background: i === 2 ? '#efe9d8' : C.fond, border: `4px solid ${C.encre}`, padding: '6px 8px' },
             h('div', { fontSize: 40, fontWeight: 800 }, String(v)),
-            h('div', { fontSize: 20 }, `${l}`),
+            h('div', { fontSize: 19 }, l),
           ),
         ),
       ),
+      h('div', { fontSize: 22, color: '#4a443a' }, `Nombre de candidats par position, de A à B · position inconnue : ${inconnues}`),
     ),
     pied(`La position de chacun des ${actifs.length} candidats`),
   );
-  await rendre(el, join(dossier, 'questions', `${q.id}.png`));
+  await rendre(el, join(dossier, 'questions', `${e.id}.png`));
   n++;
 }
 console.log(`Images de partage : ${Object.keys(images).length} générales, ${n} fiches (candidats et questions) dans public/og/`);

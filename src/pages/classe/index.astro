@@ -2,13 +2,13 @@
 import Base from '../../layouts/Base.astro';
 import Icone from '../../components/Icone';
 import { introThemes } from '../../data/classe';
-import { lien, questionsParTheme } from '../../lib/donnees';
+import { enjeuxParTheme, lien } from '../../lib/donnees';
 
 const deroule = [
-  { duree: '5 min', titre: 'Poser le cadre', texte: "Présenter l'outil : des affirmations, des positions de programmes sourcées. Rappeler qu'il n'y a pas de bonne réponse, que personne ne sera obligé de dire ce qu'il a répondu, et que l'outil mesure une proximité avec des idées, pas une consigne de vote." },
-  { duree: '10 min', titre: 'Répondre seul, en mode classe', texte: "Chaque élève fait le test en mode rapide (8 questions) sur un ordinateur ou un téléphone. Le mode classe n'affiche aucun nom ni classement : seulement la répartition des positions des programmes pour chaque affirmation." },
+  { duree: '5 min', titre: 'Poser le cadre', texte: "Présenter l'outil : des dilemmes entre deux options, des positions de programmes sourcées. Rappeler qu'il n'y a pas de bonne réponse, que personne ne sera obligé de dire ce qu'il a répondu, et que l'outil mesure une proximité avec des idées, pas une consigne de vote." },
+  { duree: '10 min', titre: 'Répondre seul, en mode classe', texte: "Chaque élève fait le test en mode rapide (12 questions) sur un ordinateur ou un téléphone. Le mode classe n'affiche aucun nom ni classement : seulement la répartition des positions des programmes pour chaque enjeu." },
   { duree: '20 min', titre: 'Travailler un thème en groupe', texte: "Par groupes, les élèves prennent la fiche d'un thème : ils lisent le contexte, reformulent les deux arguments avec leurs mots, et cherchent ce qu'il faudrait vérifier (un chiffre, une source)." },
-  { duree: '15 min', titre: 'Débat argumenté', texte: "Chaque groupe présente l'affirmation qui a le plus partagé la classe et les arguments de chaque côté. Consigne : défendre aussi l'argument qu'on ne partage pas. L'enseignant veille à l'équilibre du temps de parole." },
+  { duree: '15 min', titre: 'Débat argumenté', texte: "Chaque groupe présente l'enjeu qui a le plus partagé la classe et l'argument de chaque option. Consigne : défendre aussi l'argument qu'on ne partage pas. L'enseignant veille à l'équilibre du temps de parole." },
   { duree: '5 min', titre: "Conclure sur l'information", texte: "Revenir sur les sources : d'où vient une position, comment vérifier une citation (pages « Qui pense quoi »), pourquoi une boussole ne remplace pas la lecture des programmes." },
 ];
 ---
@@ -20,7 +20,7 @@ const deroule = [
   <section class="mt-10 grid gap-5 sm:grid-cols-3" aria-label="Principes du mode classe" data-cascade>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucun résultat nominatif</h2><p class="mt-1 text-sm text-muted-foreground">Le test en mode classe n'affiche ni classement ni nom de candidat : seulement la répartition des positions, pour discuter des idées.</p></div>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucune collecte</h2><p class="mt-1 text-sm text-muted-foreground">Pas de compte, pas de code de classe, pas de tableau de bord : les réponses restent sur l'appareil de chaque élève.</p></div>
-    <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Des arguments des deux côtés</h2><p class="mt-1 text-sm text-muted-foreground">Chaque fiche donne un contexte factuel et un argument de chaque côté, de longueur comparable, sans nom de parti.</p></div>
+    <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Des arguments des deux côtés</h2><p class="mt-1 text-sm text-muted-foreground">Chaque fiche donne un contexte factuel et un argument pour chacune des deux options, de longueur comparable, sans nom de parti.</p></div>
   </section>
 
   <p class="mt-8"><a href={lien('classe/test/')} class="brut-control brut-focus inline-flex h-12 items-center gap-2 bg-primary px-6 text-base text-primary-foreground"><Icone client:idle nom="graduation-cap" taille={22} />Lancer le test en mode classe</a></p>
@@ -40,7 +40,7 @@ const deroule = [
   <section class="mt-14" aria-labelledby="titre-fiches">
     <h2 id="titre-fiches" class="text-3xl font-bold">Fiches par thème</h2>
     <ul class="mt-6 grid gap-4 sm:grid-cols-2" data-cascade>
-      {questionsParTheme.map((t) => (
+      {enjeuxParTheme.map((t) => (
         <li class="brut-surface bg-card p-4">
           <a class="lien font-bold" href={lien(`classe/${t.theme}/`)}>{t.libelle}</a>
           <p class="mt-1 text-sm text-muted-foreground">{introThemes[t.theme]}</p>

@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import audit from '../../generated/audit.md?raw';
 import { dateFr, lien, meta } from '../../lib/donnees';
 import { lireAudit } from '../../lib/audit';
-import { EquilibreFormulations, RatiosTiers } from '../../components/graphiques/Audit';
+import { EquilibrePoles, RatiosTiers } from '../../components/graphiques/Audit';
 
 const chiffres = lireAudit(audit);
 
@@ -22,18 +22,18 @@ const skill = `${meta.depot}/blob/${meta.commit ?? 'main'}/skills/boussole-presi
     <p>Une boussole électorale n'est utile que si l'on peut vérifier comment elle fonctionne. Tout ce qui suit est public : les données, le calcul, et un audit qui teste la neutralité du résultat au lieu de l'affirmer.</p>
 
     <h2>Les positions des candidats</h2>
-    <p>Chaque candidat a une fiche. Pour chacune des {meta.nb_questions} affirmations, sa position est notée de -2 (pas du tout d'accord) à +2 (tout à fait d'accord), avec un résumé, la phrase exacte tirée de la source (citation), l'adresse de la source, sa date, et un niveau de confiance :</p>
+    <p>Chaque candidat a une fiche. Chacun des {meta.nb_enjeux} enjeux oppose deux options de même dignité, le pôle A et le pôle B. La position du candidat est placée sur cet axe, de -2 (pôle A nettement) à +2 (pôle B nettement), 0 voulant dire entre les deux ou les deux à la fois, avec un résumé, la phrase exacte tirée de la source (citation), l'adresse de la source, sa date, et un niveau de confiance :</p>
     <ul>
       <li><strong>programme</strong> : écrit dans le programme officiel 2027 ;</li>
       <li><strong>déclaration</strong> : entretien, discours ou vote récent ;</li>
       <li><strong>déduite</strong> : position du parti ou programme de 2022, non démentie.</li>
     </ul>
-    <p>Sans source, la position reste inconnue : on ne devine jamais à partir de l'étiquette politique. Les agrégateurs et les autres boussoles ne comptent jamais comme source. Chaque position a été relue par un humain qui a ouvert la source et vérifié citation, résumé et valeur ({meta.nb_positions_relues} positions relues sur {meta.nb_positions}). Les règles de codage sont publiques : <a href={`${meta.depot}/blob/main/skills/boussole-presidentielle-2027/references/mise-a-jour.md`}>references/mise-a-jour.md</a>.</p>
+    <p>Sans source, la position reste inconnue : on ne devine jamais à partir de l'étiquette politique. Les agrégateurs et les autres boussoles ne comptent jamais comme source. Une position est marquée « relue » quand un humain a ouvert la source et vérifié citation, résumé et valeur ({meta.nb_positions_relues} positions relues sur {meta.nb_positions}). Les règles de codage sont publiques : <a href={`${meta.depot}/blob/main/skills/boussole-presidentielle-2027/references/mise-a-jour.md`}>references/mise-a-jour.md</a>.</p>
 
     <h2>Le calcul</h2>
     <p>Le calcul est celui du script <a href={`${skill}/scripts/score.py`}>score.py</a> du skill, porté à l'identique en TypeScript pour tourner dans votre navigateur. Un test automatique compare, à chaque modification, les résultats des deux versions sur une série de profils (fixes et tirés au hasard) : ils doivent être identiques au chiffre près.</p>
     <ul>
-      <li><strong>Accord brut.</strong> Sur chaque question où vous et le candidat avez une position, l'accord vaut <code>1 - |écart| / 4</code> : 1 si identique, 0 si opposé.</li>
+      <li><strong>Accord brut.</strong> Votre réponse se lit sur le même axe que les positions (le côté où chaque option s'affichait ne compte pas). Sur chaque enjeu où vous et le candidat avez une position, l'accord vaut <code>1 - |écart| / 4</code> : 1 si identique, 0 si opposé.</li>
       <li><strong>Correction du hasard.</strong> Une position nuancée (0) est en moyenne plus proche d'une réponse quelconque (accord moyen 0,7) qu'une position tranchée (0,5 à ±2). Chaque accord est donc corrigé comme un kappa de Cohen : <code>(accord - accord_hasard) / (1 - accord_hasard)</code>. Toutes les positions ont ainsi la même espérance face à des réponses au hasard.</li>
       <li><strong>Pondération.</strong> Le poids d'une question est l'importance de son thème pour vous (1, 2 si prioritaire, 3 si décisif) multipliée par la confiance de la position : 1 pour programme, 0,85 pour déclaration, 0,6 pour déduite.</li>
       <li><strong>Positions inconnues.</strong> Une question à laquelle vous avez répondu mais dont la position du candidat est inconnue compte comme un accord égal au hasard, avec un poids de √2 - 1 ≈ 0,41 fois l'importance du thème (et la confiance moyenne des positions connues du candidat). Ce poids rend la dispersion du score identique entre 50 % et 100 % de couverture : un candidat peu renseigné n'est ni avantagé ni pénalisé par le hasard.</li>
@@ -42,24 +42,32 @@ const skill = `${meta.depot}/blob/${meta.commit ?? 'main'}/skills/boussole-presi
       <li><strong>Alertes.</strong> Si un thème que vous avez déclaré prioritaire n'a aucune position connue chez un candidat, c'est signalé à côté de son score.</li>
     </ul>
 
-    <h2>Les modes</h2>
-    <p>Dans chaque thème, les questions sont classées selon leur pouvoir de départage (écart-type des positions des candidats × part des positions connues) par <a href={`${skill}/scripts/choisir_niveaux.py`}>choisir_niveaux.py</a>. La meilleure va en mode rapide (8 questions), les deux suivantes en mode moyen (24), les autres en mode long (40). Le mode rapide donne une tendance ; le mode long est le plus fiable.</p>
+    <h2>Le tirage des questions et les modes</h2>
+    <p>Les questions sont tirées par le script <a href={`${skill}/scripts/tirage.py`}>tirage.py</a> du skill, lui aussi porté à l'identique dans votre navigateur et vérifié par le même test automatique (même tirage à graine égale). Chaque passage reçoit une graine au hasard, gardée dans le lien du résultat : le même lien rejoue exactement le même questionnaire.</p>
+    <ul>
+      <li><strong>Ordre.</strong> Les enjeux sont mélangés, en évitant deux questions du même thème à la suite.</li>
+      <li><strong>Formulation.</strong> Chaque enjeu a deux ou trois formulations équivalentes, validées par un humain ; l'une est tirée au hasard.</li>
+      <li><strong>Côté.</strong> Le côté où chaque option apparaît est tiré au hasard, pour qu'aucune ne soit toujours présentée en premier. Votre réponse est ensuite convertie sur l'axe A … B.</li>
+      <li><strong>Rapide</strong> : 12 enjeux, au moins un par thème, tirés en favorisant ceux qui départagent le plus les candidats (écart-type de leurs positions × part des positions connues). Il donne une tendance.</li>
+      <li><strong>Adaptatif</strong> : les 12 mêmes, puis des lots de 4 enjeux choisis pour départager les candidats encore dans la marge du premier, jusqu'à ce que le premier se détache, que les enjeux restants ne les départagent plus, ou que 32 questions aient été posées.</li>
+      <li><strong>Complet</strong> : les {meta.nb_enjeux} enjeux. C'est le plus fiable.</li>
+    </ul>
 
     <h2>Ce que la boussole ne fait pas</h2>
     <ul>
-      <li>Elle ne dit pas pour qui voter : elle mesure une proximité avec des programmes, sur {meta.nb_questions} affirmations qui ne résument pas un projet présidentiel.</li>
+      <li>Elle ne dit pas pour qui voter : elle mesure une proximité avec des programmes, sur {meta.nb_enjeux} enjeux qui ne résument pas un projet présidentiel.</li>
       <li>Elle ne collecte rien : aucune réponse n'est envoyée, aucune statistique n'est faite sur les résultats des visiteurs, et le site ne publie aucun sondage.</li>
-      <li>Elle ne reformule pas : les affirmations et les citations sont reprises mot pour mot.</li>
+      <li>Elle ne reformule pas : les questions sont posées telles qu'elles ont été validées, et les citations sont reprises mot pour mot.</li>
       <li>Elle ne classe pas les candidats ailleurs que dans votre résultat : partout ailleurs, l'ordre est alphabétique et le traitement identique.</li>
     </ul>
 
     <h2 id="audit">Audit de neutralité</h2>
-    <p>Le script <a href={`${skill}/scripts/audit_biais.py`}>audit_biais.py</a> vérifie que le calcul et les formulations ne favorisent pas mécaniquement un camp. Il calcule un axe à partir des seules positions des candidats (sans aucune étiquette), mesure le sens de chaque affirmation sur cet axe, puis passe des milliers de profils sans opinion dans le calcul : si le calcul est neutre, chaque candidat classé doit sortir premier aussi souvent qu'attendu.</p>
+    <p>Le script <a href={`${skill}/scripts/audit_biais.py`}>audit_biais.py</a> vérifie que le calcul et les formulations ne favorisent pas mécaniquement un camp. Il calcule un axe à partir des seules positions des candidats (sans aucune étiquette), mesure le sens de chaque enjeu sur cet axe, puis passe des milliers de profils sans opinion dans le calcul : si le calcul est neutre, chaque candidat classé doit sortir premier aussi souvent qu'attendu.</p>
     <p>Le rapport ci-dessous est la sortie brute du script, <strong>recalculée à chaque construction du site</strong> sur les données publiées{meta.commit && <> (version <a href={`${meta.depot}/commit/${meta.commit}`}><code>{meta.commit.slice(0, 7)}</code></a>{meta.date_commit && <> du {dateFr(meta.date_commit)}</>})</>}. Les mots « gauche », « centre » et « droite » y désignent seulement les tiers de l'axe calculé.</p>
     {chiffres && (
       <div class="not-prose mt-6 grid gap-6">
         <RatiosTiers chiffres={chiffres} />
-        <EquilibreFormulations chiffres={chiffres} />
+        <EquilibrePoles chiffres={chiffres} />
       </div>
     )}
     <h3>Rapport complet</h3>

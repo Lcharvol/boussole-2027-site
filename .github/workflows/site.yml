@@ -11,6 +11,11 @@ on:
   schedule:
     - cron: "17 4 * * *"
   workflow_dispatch:
+    inputs:
+      branche_skill:
+        description: "Branche du skill à lire (vide : main si elle est au format 2, sinon v2/dilemmes)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -30,11 +35,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Données du skill (source unique, branche main)
+      # Le site lit le format 2 des données (data/enjeux.json). Tant que la PR #22 du skill n'est pas
+      # fusionnée, main est encore au format 1 : on lit alors la branche v2/dilemmes. Dès que main passe au
+      # format 2, elle est reprise automatiquement. La branche peut aussi être choisie à la main
+      # (workflow_dispatch, ou variable de dépôt BOUSSOLE_SKILL_REF).
+      - name: Choisir la branche des données du skill
+        id: branche
+        env:
+          CHOIX: ${{ inputs.branche_skill || vars.BOUSSOLE_SKILL_REF }}
+        run: |
+          if [ -n "$CHOIX" ]; then
+            ref="$CHOIX"
+          elif curl -sfI "https://raw.githubusercontent.com/Lcharvol/boussole-presidentielle-2027/main/skills/boussole-presidentielle-2027/data/enjeux.json" > /dev/null; then
+            ref=main
+          else
+            ref=v2/dilemmes
+          fi
+          echo "Branche du skill : $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Données du skill (source unique)
         uses: actions/checkout@v4
         with:
           repository: Lcharvol/boussole-presidentielle-2027
-          ref: main
+          ref: ${{ steps.branche.outputs.ref }}
           path: .donnees/skill
           fetch-depth: 1
 
@@ -55,7 +79,7 @@ jobs:
       - name: Build (données, audit de neutralité, images de partage, vérification des types)
         run: npm run build
 
-      - name: Concordance du calcul TypeScript avec score.py
+      - name: Concordance du tirage et du calcul TypeScript avec tirage.py et score.py
         run: npm run test:concordance
         env:
           CONCORDANCE_PROFILS: "100"
@@ -74,6 +98,7 @@ jobs:
         run: |
           {
             echo "### Données"
+            echo "Branche du skill : ${{ steps.branche.outputs.ref }}"
             node -e "const m=require('./src/generated/donnees.json').meta;console.log('Commit du skill : '+m.commit+' — '+m.nb_candidats+' candidats, '+m.nb_positions+' positions, '+m.nb_positions_relues+' relues.')"
           } >> "$GITHUB_STEP_SUMMARY" || true
 

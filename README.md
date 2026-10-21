@@ -1,6 +1,6 @@
 # Boussole présidentielle 2027 — le site
 
-Site vitrine de la [Boussole présidentielle 2027](https://github.com/Lcharvol/boussole-presidentielle-2027), une boussole électorale neutre pour la présidentielle française de 2027 : 40 affirmations, 25 candidats, chaque position sourcée par une citation exacte et relue par un humain.
+Site vitrine de la [Boussole présidentielle 2027](https://github.com/Lcharvol/boussole-presidentielle-2027), une boussole électorale neutre pour la présidentielle française de 2027 : 40 dilemmes entre deux options, 25 candidats, chaque position sourcée par une citation exacte.
 
 **En ligne : https://lcharvol.github.io/boussole-2027-site/**
 
@@ -11,10 +11,10 @@ Le résultat mesure une proximité avec des programmes, pas une consigne de vote
 | Page | Rôle |
 |---|---|
 | `/` | Promesse, accès au test, ce qui distingue cette boussole |
-| `/test/` | Questionnaire : mode rapide (8), moyen (24) ou long (40), thème par thème, « je passe », 3 priorités au plus |
+| `/test/` | Questionnaire en dilemmes : mode rapide (12), adaptatif (12 à 32) ou complet (40), une question à la fois, thèmes mêlés, deux options sur 5 crans (côté tiré au hasard) ou « je passe », 3 priorités au plus |
 | `/resultat/<mode>/#…` | Classement avec marge et couverture, alertes, accords et désaccords avec citation, source, confiance et relecture ; partage par lien ; passage au mode supérieur sans recommencer |
 | `/candidats/<slug>/` | Fiche par candidat : statut, programme, positions par thème, photo avec crédit |
-| `/questions/<id>/` | « Qui pense quoi » : une page par affirmation |
+| `/questions/<id>/` | « Qui pense quoi » : une page par enjeu, positions du pôle A au pôle B |
 | `/comparer/` | 2 ou 3 candidats côte à côte (`?c=slug1,slug2`) |
 | `/methode/` | Méthode complète et audit de neutralité (sortie de `audit_biais.py`, recalculée au build) |
 | `/calendrier/` | Dates officielles sourcées, et ce qui n'est pas encore fixé par décret ; export `.ics` des étapes à venir |
@@ -37,26 +37,29 @@ scripts/
   preparer-donnees.mjs   récupère le dépôt du skill, écrit src/generated/ et public/donnees/, lance l'audit
   images-partage.mjs     images de partage (Open Graph) avec satori et resvg : générique, une par mode de
                          résultat (sans résultat ni nom), une par candidat (même gabarit pour tous, crédit
-                         photo) et une par question (répartition des positions, sans nom)
+                         photo) et une par enjeu (les deux pôles et la répartition sur l'axe A … B, sans nom)
   images-portraits.mjs   portraits WebP recadrés en 4:5 (96, 192, 320 px) à partir de public/photos/
-  concordance.ts         compare score.ts et score.py sur des profils fixes et aléatoires
+  concordance.ts         compare tirage.ts / score.ts à tirage.py / score.py (mêmes tirages, mêmes scores)
   concordance_python.py  côté Python du test de concordance
   verifier-liens.mjs     vérifie les liens, ancres et images de partage internes de dist/
   serveur-test.mjs       sert dist/ sous /boussole-2027-site/ pour Lighthouse
   photos.py              met à jour les photos Wikimedia Commons (lancé à la main)
 src/
   lib/score.ts           portage à l'identique de scripts/score.py
-  lib/python.ts          primitives CPython (Mersenne Twister, round, sum) pour un résultat identique au bit près
+  lib/tirage.ts          portage à l'identique de scripts/tirage.py (enjeux posés, ordre, formulation, côté)
+  lib/python.ts          primitives CPython (Mersenne Twister, graines texte avec SHA-512, random, shuffle,
+                         choice, statistics.pstdev, round, sum) pour un résultat identique au bit près
+  lib/axe.ts             lecture d'une valeur sur l'axe d'un enjeu (pôle A -2 … pôle B +2)
   lib/partage.ts         encodage des réponses dans le fragment de l'URL
   lib/donnees.ts         accès aux données au build, tri alphabétique des candidats
   data/calendrier.ts     calendrier électoral et ses sources
-  data/classe.ts         fiches pédagogiques du mode classe
+  data/classe.ts         fiches pédagogiques du mode classe (contexte, un argument par pôle)
   data/photos.json       photos retenues : fichier, auteur, licence, lien
 ```
 
 ### Graphiques
 
-Sept graphiques (`src/components/graphiques/`), sans bibliothèque : HTML positionné en pourcentages (lisible sur mobile) ou SVG léger pour la carte. Rendus au build sur les pages statiques (aucun JavaScript), dans le navigateur sur le résultat et le comparateur. Neutralité : aucune couleur de parti, même couleur (graphite) et même traitement pour tous les candidats, seul « Vous » est mis en avant ; pas de radar ; aucun graphique de sondage ni de résultats agrégés des visiteurs ; ordres de tri écrits sous chaque graphique. Accessibilité : titre, description, version tableau et info-bulles pour chacun ; couleurs dans `src/styles/global.css` (`--viz-*`), validées avec le script du skill dataviz ; texte des cases de la grille à 5:1 au moins. La carte « vous et les candidats » utilise une ACP calculée au build (`src/lib/acp.ts`, même premier axe que `audit_biais.py`) ; les graphiques de la méthode lisent le rapport d'audit (`src/lib/audit.ts`).
+Sept graphiques (`src/components/graphiques/`), sans bibliothèque : HTML positionné en pourcentages (lisible sur mobile) ou SVG léger pour la carte. Rendus au build sur les pages statiques (aucun JavaScript), dans le navigateur sur le résultat et le comparateur. Neutralité : aucune couleur de parti, même couleur (graphite) et même traitement pour tous les candidats, seul « Vous » est mis en avant ; pas de radar ; aucun graphique de sondage ni de résultats agrégés des visiteurs ; ordres de tri écrits sous chaque graphique. Accessibilité : titre, description, version tableau et info-bulles pour chacun ; couleurs dans `src/styles/global.css` (`--viz-*`), validées avec le script du skill dataviz ; texte des cases de la grille à 5:1 au moins. La carte « vous et les candidats » utilise une ACP calculée au build (`src/lib/acp.ts`, même premier axe que `audit_biais.py`) ; les graphiques de la méthode lisent le rapport d'audit (`src/lib/audit.ts`, format 2 : tiers des modes complet, rapide et adaptatif, décompte des pôles A et B ; si le format du rapport change, ils disparaissent et le rapport brut reste affiché). Les positions se lisent sur l'axe de chaque enjeu, du pôle A (à gauche) au pôle B (à droite).
 
 ### Performance
 
@@ -66,7 +69,11 @@ Portraits WebP aux tailles affichées (`srcset`), page de résultat calculée à
 
 `src/lib/score.ts` reprend `scripts/score.py` ligne à ligne : accord `1 - |écart| / 4` corrigé du hasard, pondération importance × confiance (programme 1, déclaration 0,85, déduite 0,6), positions inconnues au poids √2 - 1, couverture minimale de 50 %, marge bootstrap (1 000 tirages, graine 2027, intervalle à 90 %), peloton de tête et thèmes prioritaires sans donnée. Pour que le bootstrap donne exactement les mêmes tirages, `src/lib/python.ts` réimplémente le générateur de `random.Random` de Python, ainsi que `round()` et `sum()`.
 
-Le test de concordance (`npm run test:concordance`) exécute `score.py` du skill et `score.ts` sur une série de profils (profils fixes, profils constants, et profils aléatoires à graine fixe avec « je passe » et priorités) : les sorties doivent être identiques. **Toute modification de `score.py` doit être reportée dans `score.ts`**, sinon la CI échoue.
+### Le tirage des questions
+
+`src/lib/tirage.ts` reprend `scripts/tirage.py` : mode rapide (12 enjeux, au moins un par thème, tirés en favorisant ceux qui départagent), adaptatif (le même socle puis des lots de 4 enjeux qui départagent le peloton de tête, 32 au plus) et complet ; ordre mêlant les thèmes, formulation tirée parmi les variantes validées, côté de chaque pôle tiré au hasard, et conversion de la réponse sur l'axe A … B. Tout dépend d'une graine tirée au début du passage et gardée dans le lien du résultat : le même lien rejoue le même questionnaire (modification des réponses, passage au mode supérieur).
+
+Le test de concordance (`npm run test:concordance`) déroule des questionnaires complets (modes, graines, réponses et « je passe » aléatoires, passage au mode supérieur) et compare chaque appel de `tirer()` à `tirage.py`, puis les scores de `score.ts` à ceux de `score.py` (profils fixes et profils issus des déroulés) : les sorties doivent être identiques. **Toute modification de `score.py` ou de `tirage.py` doit être reportée dans `score.ts` ou `tirage.ts`**, sinon la CI échoue. En local : `PYTHON=python3.12 npm run test:concordance` (Python 3.12, comme la CI).
 
 ### Confidentialité par construction
 
@@ -77,15 +84,17 @@ Le test de concordance (`npm run test:concordance`) exécute `score.py` du skill
 ### Neutralité
 
 - Mêmes gabarits, même taille et même cadrage de photo pour tous ; ordre alphabétique du nom de famille partout, sauf dans le résultat personnel.
-- Affirmations et citations reprises mot pour mot depuis les données du skill.
+- Formulations des questions et citations reprises mot pour mot depuis les données du skill ; les deux pôles d'un enjeu ont le même style, et leur côté est tiré au hasard dans le test.
 - Photos : uniquement des fichiers Wikimedia Commons sous CC BY, CC BY-SA, CC0 ou domaine public, avec auteur, licence et lien affichés ; à défaut, les initiales.
 
 ## Mise à jour des données
 
-Les données ne sont **jamais recopiées à la main** : le dépôt du skill [`Lcharvol/boussole-presidentielle-2027`](https://github.com/Lcharvol/boussole-presidentielle-2027) (branche `main`, dossier `skills/boussole-presidentielle-2027/data/`) est la source unique. À chaque build, `scripts/preparer-donnees.mjs` :
+Les données ne sont **jamais recopiées à la main** : le dépôt du skill [`Lcharvol/boussole-presidentielle-2027`](https://github.com/Lcharvol/boussole-presidentielle-2027) (dossier `skills/boussole-presidentielle-2027/data/`, **format 2** : `enjeux.json` et fiches `"format": 2`) est la source unique. Le script s'arrête avec un message clair si les données ne sont pas au format 2.
+
+Branche lue : en CI, `main` si elle est au format 2, sinon `v2/dilemmes` (le temps que la PR #22 du skill soit fusionnée) ; on peut l'imposer avec l'entrée `branche_skill` du lancement manuel ou la variable de dépôt `BOUSSOLE_SKILL_REF`. En local, `BOUSSOLE_SKILL_REF=v2/dilemmes` choisit la branche clonée (par défaut `main`). À chaque build, `scripts/preparer-donnees.mjs` :
 
 1. récupère le dépôt (en CI par `actions/checkout`, en local par `git clone` dans `.donnees/`) ;
-2. écrit `src/generated/donnees.json` (questions, fiches, métadonnées dont le commit du skill) ;
+2. écrit `src/generated/donnees.json` (enjeux, fiches, métadonnées dont le commit du skill) ;
 3. exécute `scripts/audit_biais.py` du skill et garde sa sortie pour la page Méthode ;
 4. génère les données ouvertes dans `public/donnees/`.
 

@@ -1,15 +1,20 @@
 ---
 // Une position de candidat : valeur, citation exacte, source, date, confiance, relecture.
-import { CONFIANCE, type Position } from '../lib/types';
+import Axe from './Axe';
+import { CONFIANCE, type Enjeu, type Position } from '../lib/types';
 import { dateFr, libelleValeur } from '../lib/donnees';
 
 interface Props {
   position: Position | null | undefined;
+  /** Enjeu : la valeur se lit sur son axe, du pôle A (-2) au pôle B (+2). */
+  enjeu: Enjeu;
+  /** Afficher les libellés des pôles au-dessus de l'axe (inutile quand la page les donne déjà). */
+  poles?: boolean;
   /** Titre affiché au-dessus (nom du candidat ou texte de la question). */
   titre?: string;
   titreHref?: string;
 }
-const { position: p, titre, titreHref } = Astro.props;
+const { position: p, enjeu, titre, titreHref, poles = true } = Astro.props;
 const connue = p && p.valeur !== null && p.valeur !== undefined;
 let domaine = '';
 try {
@@ -21,9 +26,10 @@ try {
   <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
     {titre && (titreHref ? <h3 class="font-sans text-base font-bold"><a class="lien" href={titreHref}>{titre}</a></h3> : <h3 class="font-sans text-base font-bold">{titre}</h3>)}
     <span class:list={['brut-chip px-2 py-0.5 text-[0.7rem]', connue ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground']}>
-      {connue ? `${p!.valeur! > 0 ? '+' : ''}${p!.valeur} · ${libelleValeur(p!.valeur)}` : 'Position inconnue'}
+      {connue ? libelleValeur(p!.valeur, enjeu) : 'Position inconnue'}
     </span>
   </div>
+  {connue && <div class="mt-3 max-w-md"><Axe e={enjeu} marques={[{ valeur: p!.valeur, signe: '●', plein: true }]} poles={poles} /></div>}
   {connue ? (
     <>
       {p!.citation && (
