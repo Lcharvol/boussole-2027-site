@@ -1,0 +1,32 @@
+---
+// Une étape de la frise du calendrier électoral.
+import type { Etape } from '../data/calendrier';
+import { dateFr } from '../lib/donnees';
+
+interface Props {
+  e: Etape;
+  prochaine: boolean;
+  passee: boolean;
+}
+const { e, prochaine, passee } = Astro.props;
+const STATUT = {
+  officiel: { libelle: 'Date officielle', cls: 'bg-primary text-primary-foreground' },
+  calcule: { libelle: 'Déduite des textes, à confirmer', cls: 'bg-secondary text-secondary-foreground' },
+  a_venir: { libelle: 'Pas encore fixée', cls: 'bg-muted text-foreground' },
+};
+---
+
+<li class:list={['relative', passee && 'opacity-80']}>
+  <span class:list={['absolute top-2 -left-[calc(1.5rem+7px)] size-3 rounded-full border-2 border-border bg-primary', prochaine && 'pulsation']} aria-hidden="true"></span>
+  <div class="brut-surface bg-card p-4">
+    <p class="flex flex-wrap items-center gap-2">
+      <span class="font-serif text-lg font-bold">{e.date ? dateFr(e.date) : 'Date à venir'}</span>
+      <span class:list={['brut-chip px-1.5 py-0.5 text-[0.65rem]', STATUT[e.statut].cls]}>{STATUT[e.statut].libelle}</span>
+      {passee && <span class="text-xs text-muted-foreground">passé</span>}
+      {prochaine && <span class="text-xs font-bold">prochaine étape</span>}
+    </p>
+    <h2 class="mt-1 font-sans text-base font-bold">{e.titre}</h2>
+    <p class="mt-1 text-sm text-muted-foreground">{e.detail}</p>
+    <p class="mt-2 text-xs">Sources : {e.sources.map((s, i) => <>{i > 0 && ' · '}<a class="lien" href={s.url}>{s.libelle}</a></>)}</p>
+  </div>
+</li>

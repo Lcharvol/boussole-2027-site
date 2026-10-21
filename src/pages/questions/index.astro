@@ -20,19 +20,24 @@ const repartition = (id: string) => {
   <p class="mt-4 max-w-2xl text-muted-foreground">
     Une page par enjeu, entre deux options (pôle A et pôle B) : la position de chaque candidat, avec la citation exacte, la source et le niveau de confiance. Les chiffres indiquent combien de candidats penchent vers A, se situent entre les deux, penchent vers B, ou ont une position inconnue.
   </p>
+  <div class="mt-6 max-w-md">
+    <label for="filtre-enjeux" class="text-sm font-semibold">Chercher un enjeu</label>
+    <input id="filtre-enjeux" type="search" placeholder="Par exemple : retraite, nucléaire, RIC…" autocomplete="off" class="brut-input mt-1 h-11 w-full px-3 text-base" />
+    <p id="filtre-resultat" class="mt-1 text-xs text-muted-foreground" aria-live="polite"></p>
+  </div>
   <nav aria-label="Thèmes" class="mt-6">
     <ul class="flex flex-wrap gap-2 text-sm">
       {enjeuxParTheme.map((t) => <li><a class="brut-quiet inline-block border-border px-2 py-1" href={`#t-${t.theme}`}>{t.libelle}</a></li>)}
     </ul>
   </nav>
   {enjeuxParTheme.map((t) => (
-    <section class="mt-10 scroll-mt-6" aria-labelledby={`t-${t.theme}`}>
+    <section class="mt-10 scroll-mt-6" aria-labelledby={`t-${t.theme}`} data-section>
       <h2 id={`t-${t.theme}`} class="text-2xl font-bold">{t.libelle}</h2>
       <ul class="mt-4 grid gap-3" data-cascade>
         {t.enjeux.map((e) => {
           const r = repartition(e.id);
           return (
-            <li class="survol brut-surface bg-card p-4">
+            <li class="survol brut-surface bg-card p-4" data-texte={[titreEnjeu(e), t.libelle, e.contexte ?? '', ...e.variantes.filter((v) => v.validee).flatMap((v) => [v.question, v.a, v.b])].join(' ')}>
               <a class="lien font-semibold" href={lien(`questions/${e.id}/`)}>{titreEnjeu(e)}</a>
               <p class="mt-2 text-xs text-muted-foreground">
                 {r.a} côté A · {r.neutre} entre les deux · {r.b} côté B · {r.inconnu} position{r.inconnu > 1 ? 's' : ''} inconnue{r.inconnu > 1 ? 's' : ''}
@@ -43,4 +48,30 @@ const repartition = (id: string) => {
       </ul>
     </section>
   ))}
+  <p id="filtre-vide" class="mt-8 hidden text-muted-foreground">Aucun enjeu ne correspond à cette recherche.</p>
+  <script is:inline>
+    (function () {
+      var champ = document.getElementById('filtre-enjeux');
+      var res = document.getElementById('filtre-resultat');
+      var vide = document.getElementById('filtre-vide');
+      var norm = function (t) { return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+      var items = Array.prototype.slice.call(document.querySelectorAll('[data-texte]'));
+      // Recherche par début de mot : « ric » trouve « RIC » mais pas « électricité ».
+      items.forEach(function (li) { li.mots = norm(li.dataset.texte).split(/[^a-z0-9%]+/).filter(Boolean); });
+      champ.addEventListener('input', function () {
+        var mots = norm(champ.value).split(/\s+/).filter(Boolean);
+        var n = 0;
+        items.forEach(function (li) {
+          var ok = mots.every(function (m) { return li.mots.some(function (w) { return w.indexOf(m) === 0; }); });
+          li.hidden = !ok;
+          if (ok) n++;
+        });
+        document.querySelectorAll('[data-section]').forEach(function (sec) {
+          sec.hidden = !sec.querySelector('[data-texte]:not([hidden])');
+        });
+        vide.classList.toggle('hidden', n > 0);
+        res.textContent = mots.length ? n + ' enjeu' + (n > 1 ? 'x' : '') + ' sur ' + items.length : '';
+      });
+    })();
+  </script>
 </Base>

@@ -10,6 +10,9 @@ import { calendrier } from '../data/calendrier';
 const exemple = presenter(listeEnjeux[0], themes, 1);
 
 const aujourdhui = new Date().toISOString().slice(0, 10);
+// Compte à rebours jusqu'au premier tour : calculé au build (reconstruction quotidienne) et remis à jour
+// dans le navigateur au chargement.
+const joursAvant = Math.ceil((Date.parse('2027-04-18T00:00:00+02:00') - Date.now()) / 86_400_000);
 const prochaines = calendrier.filter((e) => e.date && e.date >= aujourdhui).slice(0, 3);
 
 const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' | 'layers' | 'circle-help' | 'shield-check' | 'download' }[] = [
@@ -49,7 +52,10 @@ const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' 
 <Base titre="Accueil" large>
   <section class="grid items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
     <div>
-      <p class="entree brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">Présidentielle des 18 avril et 2 mai 2027</p>
+      <p class="entree flex flex-wrap items-center gap-2">
+        <span class="brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">Présidentielle des 18 avril et 2 mai 2027</span>
+        {joursAvant > 0 && <span id="compte-a-rebours" data-date="2027-04-18" class="brut-chip inline-block bg-card px-2 py-1 text-xs">J-{joursAvant} avant le premier tour</span>}
+      </p>
       <h1 class="entree mt-4 text-4xl font-bold leading-[1.05] sm:text-6xl" style="--delai: 80ms">De quels programmes êtes-vous proche ?</h1>
       <p class="entree mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground" style="--delai: 160ms">
         {meta.nb_enjeux} dilemmes sur {Object.keys(themes).length} grands thèmes, comparés aux positions de {meta.nb_candidats} candidats déclarés ou pressentis. Chaque position est sourcée par une citation exacte.
@@ -164,4 +170,13 @@ const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' 
       <p class="mt-2"><a class="lien inline-flex items-center gap-1.5 font-semibold" href={lien('classe/')}><Icone client:visible nom="graduation-cap" taille={18} />Utiliser la boussole en classe</a></p>
     </div>
   </section>
+  <script is:inline>
+    (function () {
+      var e = document.getElementById('compte-a-rebours');
+      if (!e) return;
+      var j = Math.ceil((Date.parse(e.dataset.date + 'T00:00:00+02:00') - Date.now()) / 86400000);
+      if (j > 0) e.textContent = 'J-' + j + ' avant le premier tour';
+      else e.remove();
+    })();
+  </script>
 </Base>
