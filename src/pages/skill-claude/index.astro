@@ -30,4 +30,27 @@ cp -r /tmp/boussole/skills/boussole-presidentielle-2027 ~/.claude/skills/</code>
 
     <p>Code source, fiches et méthode : <a href={meta.depot}>{meta.depot.replace('https://', '')}</a>{meta.version_plugin && <> (version {meta.version_plugin})</>}. Le site et le skill partagent les mêmes données : <a href={lien('methode/')}>voir la méthode</a>.</p>
   </article>
+  <p class="sr-only" aria-live="polite" id="annonce-copie"></p>
+  <script is:inline>
+    // Bouton « Copier » sur chaque commande (amélioration progressive : sans JavaScript, le texte reste sélectionnable).
+    (function () {
+      var annonce = document.getElementById('annonce-copie');
+      document.querySelectorAll('main pre').forEach(function (pre) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'brut-control brut-focus absolute right-2 top-2 bg-card px-2 py-1 text-xs';
+        b.textContent = 'Copier';
+        b.addEventListener('click', function () {
+          navigator.clipboard.writeText((pre.querySelector('code') || pre).innerText.trim()).then(function () {
+            b.textContent = 'Copié';
+            annonce.textContent = 'Commande copiée.';
+            setTimeout(function () { b.textContent = 'Copier'; }, 2000);
+          }, function () { annonce.textContent = 'La copie a échoué : sélectionnez le texte.'; });
+        });
+        pre.style.position = 'relative';
+        pre.style.paddingTop = '2.75rem';
+        pre.appendChild(b);
+      });
+    })();
+  </script>
 </Base>

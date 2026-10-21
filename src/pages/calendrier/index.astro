@@ -2,14 +2,13 @@
 import Base from '../../layouts/Base.astro';
 import { calendrier } from '../../data/calendrier';
 import Icone from '../../components/Icone';
+import Etape from '../../components/Etape.astro';
 import { dateFr, lien } from '../../lib/donnees';
 const aujourdhui = new Date().toISOString().slice(0, 10);
 const prochaine = calendrier.find((e) => e.date && e.date >= aujourdhui);
-const STATUT = {
-  officiel: { libelle: 'Date officielle', cls: 'bg-primary text-primary-foreground' },
-  calcule: { libelle: 'Déduite des textes, à confirmer', cls: 'bg-secondary text-secondary-foreground' },
-  a_venir: { libelle: 'Pas encore fixée', cls: 'bg-muted text-foreground' },
-};
+// Les étapes passées sont repliées au-dessus de la frise ; les étapes sans date restent avec celles à venir.
+const passees = calendrier.filter((e) => e.date && e.date < aujourdhui);
+const aVenir = calendrier.filter((e) => !passees.includes(e));
 ---
 
 <Base titre="Calendrier électoral" description="Le calendrier de l'élection présidentielle 2027 : parrainages, inscriptions, liste des candidats, campagne, premier et second tours, avec les sources officielles.">
@@ -22,23 +21,16 @@ const STATUT = {
       <Icone client:visible nom="calendar-check" taille={18} />Ajouter les dates officielles à mon agenda (.ics)
     </a>
   </p>
-  <ol class="relative mt-10 grid gap-6 border-l-[length:var(--brut-border)] border-border pl-6" data-cascade>
-    {calendrier.map((e) => (
-      <li class:list={['relative', e.date && e.date < aujourdhui && 'opacity-80']}>
-        <span class:list={['absolute top-2 -left-[calc(1.5rem+7px)] size-3 rounded-full border-2 border-border bg-primary', e === prochaine && 'pulsation']} aria-hidden="true"></span>
-        <div class="brut-surface bg-card p-4">
-          <p class="flex flex-wrap items-center gap-2">
-            <span class="font-serif text-lg font-bold">{e.date ? dateFr(e.date) : 'Date à venir'}</span>
-            <span class:list={['brut-chip px-1.5 py-0.5 text-[0.65rem]', STATUT[e.statut].cls]}>{STATUT[e.statut].libelle}</span>
-            {e.date && e.date < aujourdhui && <span class="text-xs text-muted-foreground">passé</span>}
-            {e === prochaine && <span class="text-xs font-bold">prochaine étape</span>}
-          </p>
-          <h2 class="mt-1 font-sans text-base font-bold">{e.titre}</h2>
-          <p class="mt-1 text-sm text-muted-foreground">{e.detail}</p>
-          <p class="mt-2 text-xs">Sources : {e.sources.map((s, i) => <>{i > 0 && ' · '}<a class="lien" href={s.url}>{s.libelle}</a></>)}</p>
-        </div>
-      </li>
-    ))}
+  {passees.length > 0 && (
+    <details class="mt-8 text-sm">
+      <summary class="cursor-pointer font-semibold">Étapes passées ({passees.length})</summary>
+      <ol class="relative mt-4 grid gap-6 border-l-[length:var(--brut-border)] border-border pl-6">
+        {passees.map((e) => <Etape e={e} prochaine={false} passee />)}
+      </ol>
+    </details>
+  )}
+  <ol class="relative mt-8 grid gap-6 border-l-[length:var(--brut-border)] border-border pl-6" data-cascade>
+    {aVenir.map((e) => <Etape e={e} prochaine={e === prochaine} passee={false} />)}
   </ol>
   <section class="mt-12 brut-panel bg-card p-5">
     <h2 class="text-2xl font-bold">Pour voter</h2>
