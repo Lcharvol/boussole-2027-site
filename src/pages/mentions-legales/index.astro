@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { AUDIENCE_ACTIVE } from '../../lib/config-audience';
 ---
 
 <Base titre="Mentions légales" description="Mentions légales de la Boussole présidentielle 2027.">
@@ -34,6 +35,6 @@ import Base from '../../layouts/Base.astro';
     <p>Ce site mesure une proximité entre les réponses d'un visiteur et des positions publiques de candidats. Ce n'est pas une consigne de vote, ni un sondage : il ne publie aucun résultat agrégé des réponses de ses visiteurs.</p>
 
     <h2>Données personnelles</h2>
-    <p>Le site ne collecte aucune donnée personnelle. Voir la page <a href="../confidentialite/">Confidentialité</a>.</p>
+    <p>{AUDIENCE_ACTIVE ? "Le site ne collecte aucune réponse au test ni aucune donnée permettant d'identifier ses visiteurs ; il mesure son audience de façon anonyme, sans cookie (GoatCounter)." : 'Le site ne collecte aucune donnée personnelle.'} Voir la page <a href="../confidentialite/">Confidentialité</a>.</p>
   </article>
 </Base>

@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
 import Icone from '../components/Icone';
+import Audience from '../components/Audience.astro';
+import { CODE_GOATCOUNTER, INTEGRITE_COUNT_JS } from '../lib/config-audience';
 import { dateFr, lien, meta } from '../lib/donnees';
 
 interface Props {
@@ -40,7 +42,15 @@ const actif = (href: string) => chemin.startsWith(lien(href));
 ---
 
 <!doctype html>
-<html lang="fr" data-brut-palette="paper" data-brut-strength="solid" data-brut-radius="cut">
+<html
+  lang="fr"
+  data-brut-palette="paper"
+  data-brut-strength="solid"
+  data-brut-radius="cut"
+  data-goatcounter={CODE_GOATCOUNTER ? `https://${CODE_GOATCOUNTER}.goatcounter.com/count` : undefined}
+  data-goatcounter-script={CODE_GOATCOUNTER ? lien('vendor/goatcounter/count.v5.js') : undefined}
+  data-goatcounter-integrite={CODE_GOATCOUNTER ? INTEGRITE_COUNT_JS : undefined}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -121,7 +131,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
         <div class="space-y-3">
           <p class="font-serif text-base font-bold">Proximité avec des programmes, pas une consigne de vote.</p>
           <p class="text-muted-foreground">
-            Aucun cookie, aucun traceur, aucun sondage. Vos réponses restent dans votre navigateur.
+            {CODE_GOATCOUNTER ? <>Aucun cookie, aucun sondage, <a class="lien" href={lien('confidentialite/#mesure-audience')}>mesure d'audience anonyme (GoatCounter)</a>.</> : 'Aucun cookie, aucun traceur, aucun sondage.'} Vos réponses restent dans votre navigateur.
             Données : <a class="lien" href={meta.depot}>dépôt du skill</a>{meta.commit && <>, version <a class="lien font-mono" href={`${meta.depot}/commit/${meta.commit}`}>{meta.commit.slice(0, 7)}</a></>}{meta.date_commit && <> du {dateFr(meta.date_commit)}</>}.
           </p>
         </div>
@@ -199,5 +209,6 @@ const actif = (href: string) => chemin.startsWith(lien(href));
         document.addEventListener('click', function (e) { if (m.open && !m.contains(e.target)) m.open = false; });
       })();
     </script>
+    {CODE_GOATCOUNTER && <Audience code={CODE_GOATCOUNTER} />}
   </body>
 </html>

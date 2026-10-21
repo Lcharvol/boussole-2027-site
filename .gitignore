@@ -10,3 +10,4 @@ public/og/
 __pycache__/
 .DS_Store
 public/portraits/
+dist-audience/

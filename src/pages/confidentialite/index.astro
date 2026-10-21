@@ -1,32 +1,92 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { AUDIENCE_ACTIVE } from '../../lib/config-audience';
 ---
 
-<Base titre="Confidentialité" description="La Boussole présidentielle 2027 ne collecte aucune donnée : pas de cookie, pas de traceur, calcul dans le navigateur.">
+<Base
+  titre="Confidentialité"
+  description={AUDIENCE_ACTIVE
+    ? "La Boussole présidentielle 2027 ne collecte aucune réponse : calcul dans le navigateur, pas de cookie, mesure d'audience anonyme (GoatCounter)."
+    : 'La Boussole présidentielle 2027 ne collecte aucune donnée : pas de cookie, pas de traceur, calcul dans le navigateur.'}
+>
   <article class="prose-b">
     <h1 class="text-4xl font-bold">Confidentialité</h1>
-    <p><strong>En bref : le site ne collecte rien.</strong> Vos réponses sont des opinions politiques, c'est-à-dire des données sensibles ; elles ne quittent jamais votre appareil.</p>
+    {AUDIENCE_ACTIVE ? (
+      <p><strong>En bref : vos réponses ne quittent jamais votre appareil.</strong> Ce sont des opinions politiques, c'est-à-dire des données sensibles. Le site compte seulement ses visites, de façon anonyme et sans cookie (GoatCounter).</p>
+    ) : (
+      <p><strong>En bref : le site ne collecte rien.</strong> Vos réponses sont des opinions politiques, c'est-à-dire des données sensibles ; elles ne quittent jamais votre appareil.</p>
+    )}
 
     <h2>Vos réponses</h2>
     <ul>
       <li>Le questionnaire et le calcul fonctionnent entièrement dans votre navigateur. Aucune réponse n'est envoyée à un serveur.</li>
-      <li>À la fin du test, vos réponses sont encodées dans l'adresse de la page de résultat, après le signe « # ». Cette partie de l'adresse n'est jamais transmise au serveur par le navigateur : l'hébergeur ne la voit pas.</li>
+      <li>À la fin du test, vos réponses sont encodées dans l'adresse de la page de résultat, après le signe « # ». Cette partie de l'adresse n'est jamais transmise au serveur par le navigateur : l'hébergeur ne la voit pas{AUDIENCE_ACTIVE && ', et la mesure d\'audience ne l\'envoie jamais'}.</li>
       <li>Si vous partagez ce lien, la personne qui l'ouvre verra vos réponses. Ne le partagez qu'en connaissance de cause.</li>
       <li>Rien n'est enregistré dans votre navigateur : en fermant la page, le résultat disparaît (sauf si vous gardez le lien).</li>
     </ul>
 
+    {AUDIENCE_ACTIVE && (
+      <>
+        <h2 id="mesure-audience">Mesure d'audience</h2>
+        <p>Pour savoir combien de personnes utilisent la boussole et d'où elles viennent, le site utilise <a href="https://www.goatcounter.com/">GoatCounter</a>, un outil de mesure d'audience sans cookie. Le script officiel (<code>count.js</code>, version 5) est servi par le site lui-même ; les mesures sont envoyées à goatcounter.com.</p>
+        <p><strong>Ce qui est mesuré :</strong></p>
+        <ul>
+          <li>les pages vues, réduites à leur chemin (par exemple <code>/resultat/rapide/</code>) : tout ce qui suit « ? » ou « # » dans l'adresse est retiré avant l'envoi ;</li>
+          <li>le site d'où vous venez, réduit à son nom (par exemple <code>www.tiktok.com</code>), ou l'étiquette d'un lien partagé par l'éditeur (paramètre <code>?ref=</code>, aussitôt retiré de l'adresse) ;</li>
+          <li>la taille de l'écran, le navigateur et le système (d'après les informations que le navigateur envoie), la langue ;</li>
+          <li>le pays, déduit de l'adresse IP. GoatCounter ne conserve pas l'adresse IP : elle sert seulement, en mémoire et pour quelques heures, à ne pas compter deux fois la même visite ;</li>
+          <li>deux compteurs : « test commencé » et « test terminé », avec le seul mode choisi (rapide, adaptatif ou complet) ;</li>
+          <li>les téléchargements des données ouvertes (le nom du fichier).</li>
+        </ul>
+        <p><strong>Ce qui n'est jamais mesuré :</strong> vos réponses, votre résultat, vos scores, vos thèmes prioritaires, les candidats affichés, classés ou comparés. Aucun cookie, aucun identifiant, aucun profil. Un test automatique vérifie, à chaque modification du site, qu'aucune de ces données ne part.</p>
+        <p><strong>Ce qui n'est jamais publié :</strong> les statistiques restent privées, consultées par l'éditeur seulement. Le site n'affiche aucun chiffre tiré de ces mesures, pour qu'on ne puisse pas les prendre pour un sondage.</p>
+        <p><strong>Refuser :</strong> si votre navigateur envoie le signal « Do Not Track » ou « Global Privacy Control », rien n'est compté. Vous pouvez aussi refuser sur ce navigateur avec le bouton ci-dessous (le choix est gardé dans le stockage local, clé <code>boussole-audience</code>, sur votre appareil seulement).</p>
+        <p class="no-print">
+          <button type="button" id="bouton-audience" class="brut-control brut-focus bg-background px-4 py-2 text-sm" aria-pressed="false">Ne plus être compté sur ce navigateur</button>
+          <span id="etat-audience" class="ml-2 text-sm" aria-live="polite"></span>
+        </p>
+        <p><strong>Qui traite ces données :</strong> GoatCounter est édité par Martin Tournoij (Irlande) ; les données sont hébergées chez Hetzner Online GmbH, en Finlande et en Allemagne. Voir la <a href="https://www.goatcounter.com/help/privacy">politique de confidentialité de GoatCounter</a>. Cette mesure est conçue pour respecter les conditions d'exemption de consentement fixées par la CNIL (finalité limitée à la mesure d'audience, données anonymes, aucun recoupement, possibilité de refus).</p>
+        <p>Note technique : le script de GoatCounter lit une clé <code>skipgc</code> du stockage local si elle existe (réglage d'exclusion prévu pour l'éditeur du site) ; il n'écrit rien de lui-même.</p>
+      </>
+    )}
+
     <h2>Ce que le site n'utilise pas</h2>
     <ul>
       <li>Aucun cookie.</li>
-      <li>Aucune mesure d'audience, aucun traceur, aucun bouton de réseau social, aucune publicité.</li>
-      <li>Aucune ressource chargée depuis un autre site : polices, scripts, photos et données sont servis par le site lui-même. Les liens vers les sources des citations ne sont suivis que si vous cliquez dessus.</li>
+      {AUDIENCE_ACTIVE ? (
+        <li>Aucun traceur publicitaire, aucun bouton de réseau social, aucune publicité, aucun profilage.</li>
+      ) : (
+        <li>Aucune mesure d'audience, aucun traceur, aucun bouton de réseau social, aucune publicité.</li>
+      )}
+      <li>Aucune ressource chargée depuis un autre site : polices, scripts, photos et données sont servis par le site lui-même{AUDIENCE_ACTIVE && " ; seule la mesure d'audience envoie une requête à goatcounter.com"}. Les liens vers les sources des citations ne sont suivis que si vous cliquez dessus.</li>
       <li>Aucun compte, aucun formulaire, aucune adresse e-mail demandée.</li>
     </ul>
 
-    <h2>Le seul réglage mémorisé</h2>
-    <p>Si vous choisissez le thème clair ou sombre avec le bouton prévu, ce choix est gardé dans le stockage local de votre navigateur (<code>localStorage</code>, clé <code>theme</code>), sur votre appareil seulement. Il n'est jamais transmis.</p>
+    <h2>{AUDIENCE_ACTIVE ? 'Les réglages mémorisés' : 'Le seul réglage mémorisé'}</h2>
+    <p>Si vous choisissez le thème clair ou sombre avec le bouton prévu, ce choix est gardé dans le stockage local de votre navigateur (<code>localStorage</code>, clé <code>theme</code>), sur votre appareil seulement. Il n'est jamais transmis.{AUDIENCE_ACTIVE && " De même pour le refus de la mesure d'audience (clé boussole-audience)."}</p>
 
     <h2>L'hébergeur</h2>
     <p>Le site est hébergé par GitHub Pages. Comme tout hébergeur web, GitHub peut enregistrer des données techniques de connexion (adresse IP, date, page demandée, sans la partie après « # ») pour la sécurité de son service. Voir la <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">déclaration de confidentialité de GitHub</a>.</p>
   </article>
+  {AUDIENCE_ACTIVE && (
+    <script is:inline>
+      (function () {
+        var b = document.getElementById('bouton-audience');
+        var etat = document.getElementById('etat-audience');
+        if (!b) return;
+        function lire() { try { return localStorage.getItem('boussole-audience') === 'refus'; } catch (e) { return false; } }
+        function maj() {
+          var refus = lire();
+          b.setAttribute('aria-pressed', String(refus));
+          b.textContent = refus ? 'Accepter à nouveau d’être compté' : 'Ne plus être compté sur ce navigateur';
+          etat.textContent = refus ? 'Vous n’êtes plus compté sur ce navigateur.' : '';
+        }
+        b.addEventListener('click', function () {
+          try { if (lire()) localStorage.removeItem('boussole-audience'); else localStorage.setItem('boussole-audience', 'refus'); } catch (e) {}
+          maj();
+        });
+        maj();
+      })();
+    </script>
+  )}
 </Base>

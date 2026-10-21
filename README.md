@@ -4,7 +4,7 @@ Site vitrine de la [Boussole présidentielle 2027](https://github.com/Lcharvol/b
 
 **En ligne : https://lcharvol.github.io/boussole-2027-site/**
 
-Le résultat mesure une proximité avec des programmes, pas une consigne de vote. Le site ne collecte rien : pas de cookie, pas de traceur, pas de mesure d'audience, pas de sondage. Le calcul se fait dans le navigateur.
+Le résultat mesure une proximité avec des programmes, pas une consigne de vote. Le site ne collecte aucune réponse : pas de cookie, pas de sondage ; une mesure d'audience anonyme et facultative (GoatCounter) compte seulement les visites. Le calcul se fait dans le navigateur.
 
 ## Ce que contient le site
 
@@ -75,10 +75,32 @@ Portraits WebP aux tailles affichées (`srcset`), page de résultat calculée à
 
 Le test de concordance (`npm run test:concordance`) déroule des questionnaires complets (modes, graines, réponses et « je passe » aléatoires, passage au mode supérieur) et compare chaque appel de `tirer()` à `tirage.py`, puis les scores de `score.ts` à ceux de `score.py` (profils fixes et profils issus des déroulés) : les sorties doivent être identiques. **Toute modification de `score.py` ou de `tirage.py` doit être reportée dans `score.ts` ou `tirage.ts`**, sinon la CI échoue. En local : `PYTHON=python3.12 npm run test:concordance` (Python 3.12, comme la CI).
 
+### Mesure d'audience (GoatCounter)
+
+Activée seulement si la variable de dépôt GitHub **`GOATCOUNTER_CODE`** est renseignée (*Settings → Secrets and variables → Actions → Variables*, valeur : le code du site GoatCounter, par exemple `boussole2027`). Vide : aucun script, aucune mesure, et les textes du site le disent.
+
+- **Script** : `count.js` officiel, **version 5 épinglée et servie par le site** (`public/vendor/goatcounter/count.v5.js`, attribut `integrity`) ; la CI vérifie son empreinte SRI contre celle publiée par GoatCounter (`scripts/verifier-goatcounter.mjs`). Aucune ressource tierce n'est chargée ; seules les mesures partent vers `<code>.goatcounter.com`.
+- **Aucune donnée d'opinion** (`src/lib/audience.ts`, `src/scripts/audience.ts`) : comptage manuel (`no_onload`), chemin seul sans requête ni fragment. `count.js` envoyant toujours `location.search`, le comptage se fait sur une adresse momentanément réduite au chemin, rétablie aussitôt. Référent externe réduit au nom de domaine. Événements en **liste blanche** : `test-commence/<mode>`, `test-termine/<mode>` (rapide, adaptatif, complet), `donnees/<fichier>` (clic sur un JSON ou un CSV). Jamais de réponse, de score, de candidat ni de thème.
+- **Refus** : rien n'est compté avec Do Not Track ou Global Privacy Control, ni après le bouton « Ne plus être compté » de la page Confidentialité.
+- **Test de bout en bout** (`npm run test:audience`, en CI) : build avec un code de test, toutes les requêtes vers GoatCounter interceptées (rien n'est réellement envoyé) ; échec si un chemin ou un référent contient `?` ou `#`, si la requête de la page part, si un événement sort de la liste blanche, si une trace des réponses apparaît, ou si Do Not Track / le refus ne sont pas respectés.
+- **Aucune statistique publiée sur le site** : le tableau de bord GoatCounter reste privé (pas de « X personnes ont fait le test », pour éviter toute confusion avec un sondage).
+
+#### Liens tagués (stories TikTok, réseaux…)
+
+Pour savoir d'où viennent les visites, ajoutez `?ref=` suivi d'une étiquette (lettres, chiffres et tirets, 40 caractères au plus) :
+
+```
+https://lcharvol.github.io/boussole-2027-site/?ref=tiktok-story-1
+https://lcharvol.github.io/boussole-2027-site/test/?ref=tiktok-story-2
+https://lcharvol.github.io/boussole-2027-site/?ref=instagram-bio
+```
+
+L'étiquette est transmise **uniquement comme référent** (colonne *Referrers* de GoatCounter), jamais dans le chemin, puis retirée de l'adresse affichée. Convention conseillée : `<réseau>-<format>-<numéro>` (`tiktok-story-1`, `tiktok-video-3`, `instagram-bio`). Ne jamais mettre d'information sur une personne dans l'étiquette.
+
 ### Confidentialité par construction
 
 - Les réponses sont encodées après le `#` de l'URL de résultat (format décrit dans `src/lib/partage.ts`). Le navigateur ne transmet jamais cette partie au serveur.
-- Aucun cookie, aucun script tiers. Seul le choix du thème clair/sombre est gardé dans le `localStorage`.
+- Aucun cookie, aucun script tiers. Seuls le choix du thème clair/sombre et, le cas échéant, le refus de la mesure d'audience sont gardés dans le `localStorage`.
 - Aucune statistique sur les résultats des visiteurs n'est calculée ni publiée : le site ne doit pas pouvoir être assimilé à un sondage en période électorale.
 
 ### Neutralité
