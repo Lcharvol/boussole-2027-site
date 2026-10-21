@@ -77,7 +77,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
       })();
     </script>
   </head>
-  <body class="bg-background text-foreground antialiased">
+  <body class="flex min-h-screen min-h-dvh flex-col bg-background text-foreground antialiased">
     <a href="#contenu" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 brut-control bg-primary text-primary-foreground px-4 py-2">Aller au contenu</a>
     <header class="border-b-[length:var(--brut-border)] border-border bg-card">
       <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
@@ -112,7 +112,7 @@ const actif = (href: string) => chemin.startsWith(lien(href));
       </div>
     </header>
 
-    <main id="contenu" tabindex="-1" class:list={['mx-auto w-full px-4 py-8 sm:py-12 outline-none', large ? 'max-w-6xl' : 'max-w-4xl']}>
+    <main id="contenu" tabindex="-1" class:list={['mx-auto w-full flex-1 px-4 py-8 sm:py-12 outline-none', large ? 'max-w-6xl' : 'max-w-4xl']}>
       <slot />
     </main>
 
