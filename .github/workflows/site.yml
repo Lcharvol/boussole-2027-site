@@ -76,8 +76,17 @@ jobs:
       - name: Tests unitaires
         run: npm test
 
+      - name: count.js de GoatCounter (version épinglée, empreinte SRI)
+        run: node scripts/verifier-goatcounter.mjs
+
       - name: Build (données, audit de neutralité, images de partage, vérification des types)
         run: npm run build
+        env:
+          # Code GoatCounter (variable du dépôt). Vide : aucune mesure d'audience, aucun script.
+          GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}
+
+      - name: Mesure d'audience sans donnée d'opinion (test de bout en bout, requêtes interceptées)
+        run: npm run test:audience
 
       - name: Concordance du tirage et du calcul TypeScript avec tirage.py et score.py
         run: npm run test:concordance

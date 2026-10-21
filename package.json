@@ -15,7 +15,8 @@
     "preview": "astro preview",
     "test": "vitest run",
     "test:concordance": "tsx scripts/concordance.ts",
-    "liens": "node scripts/verifier-liens.mjs"
+    "liens": "node scripts/verifier-liens.mjs",
+    "test:audience": "GOATCOUNTER_CODE=test-ci astro build --outDir dist-audience && tsx scripts/test-audience.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

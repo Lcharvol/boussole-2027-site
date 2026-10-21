@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { createGzip } from 'node:zlib';
 import { extname, join, normalize, resolve } from 'node:path';
 
-const DIST = resolve(import.meta.dirname, '..', 'dist');
+const DIST = resolve(import.meta.dirname, '..', process.env.DIST ?? 'dist');
 const BASE = '/boussole-2027-site/';
 const PORT = Number(process.env.PORT ?? 4322);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.csv': 'text/csv; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.woff': 'font/woff', '.txt': 'text/plain' };

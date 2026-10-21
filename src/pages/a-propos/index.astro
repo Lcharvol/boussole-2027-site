@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { lien, meta } from '../../lib/donnees';
+import { AUDIENCE_ACTIVE } from '../../lib/config-audience';
 ---
 
 <Base titre="À propos et contribuer" description="Qui fait la Boussole présidentielle 2027, ses principes de neutralité, et comment signaler une erreur ou contribuer.">
@@ -14,7 +15,11 @@ import { lien, meta } from '../../lib/donnees';
       <li><strong>Sourcer chaque position.</strong> Une citation exacte, un lien, une date, un niveau de confiance ; sans source, la position reste inconnue.</li>
       <li><strong>Traiter tous les candidats de la même façon.</strong> Mêmes gabarits, même taille de photo, ordre alphabétique partout, sauf dans votre propre résultat.</li>
       <li><strong>Mesurer la neutralité.</strong> L'audit publié sur la page <a href={lien('methode/')}>Méthode</a> est recalculé à chaque mise à jour.</li>
-      <li><strong>Ne rien collecter.</strong> Pas de cookie, pas de traceur, pas de mesure d'audience, pas de statistique sur les réponses.</li>
+      {AUDIENCE_ACTIVE ? (
+        <li><strong>Ne rien collecter de personnel.</strong> Pas de cookie, pas de statistique sur les réponses ; une <a href={lien('confidentialite/#mesure-audience')}>mesure d'audience anonyme</a> (GoatCounter) compte seulement les visites, et ses chiffres ne sont jamais publiés.</li>
+      ) : (
+        <li><strong>Ne rien collecter.</strong> Pas de cookie, pas de traceur, pas de mesure d'audience, pas de statistique sur les réponses.</li>
+      )}
       <li><strong>Ne pas faire de sondage.</strong> Le site ne publie aucun sondage ni aucun agrégat des résultats de ses visiteurs : un tel chiffre ne serait pas représentatif et pourrait être pris pour un sondage, ce que la loi encadre strictement en période électorale.</li>
     </ul>
 

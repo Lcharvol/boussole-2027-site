@@ -139,6 +139,8 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
   }, [etape]);
 
   function choisirMode(m: Mode) {
+    // Mesure d'audience : uniquement « test commencé » et le mode, rien d'autre (voir src/lib/audience.ts).
+    window.boussoleAudience?.compter(`test-commence/${m}`);
     const g = nouvelleGraine();
     setMode(m);
     setGraine(g);
@@ -186,6 +188,8 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
     const code = encoder(etat, ordreE, ordreT, version);
     const cible = classe ? 'classe/resultat/' : `resultat/${mode}/`;
     envoi.current = true;
+    // Mesure d'audience : uniquement « test terminé » et le mode ; jamais les réponses ni le résultat.
+    window.boussoleAudience?.compter(`test-termine/${mode}`);
     location.assign(`${base}${cible}#${code}`);
   }
 

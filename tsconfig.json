@@ -1,7 +1,7 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", ".donnees", "node_modules"],
+  "exclude": ["dist", "dist-audience", ".donnees", "node_modules"],
   "compilerOptions": {
     "resolveJsonModule": true,
     "jsx": "react-jsx",

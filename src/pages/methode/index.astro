@@ -4,6 +4,7 @@ import Base from '../../layouts/Base.astro';
 import audit from '../../generated/audit.md?raw';
 import { dateFr, lien, meta } from '../../lib/donnees';
 import { lireAudit } from '../../lib/audit';
+import { AUDIENCE_ACTIVE } from '../../lib/config-audience';
 import { EquilibrePoles, RatiosTiers } from '../../components/graphiques/Audit';
 
 const chiffres = lireAudit(audit);
@@ -56,7 +57,7 @@ const skill = `${meta.depot}/blob/${meta.commit ?? 'main'}/skills/boussole-presi
     <h2>Ce que la boussole ne fait pas</h2>
     <ul>
       <li>Elle ne dit pas pour qui voter : elle mesure une proximité avec des programmes, sur {meta.nb_enjeux} enjeux qui ne résument pas un projet présidentiel.</li>
-      <li>Elle ne collecte rien : aucune réponse n'est envoyée, aucune statistique n'est faite sur les résultats des visiteurs, et le site ne publie aucun sondage.</li>
+      <li>Elle ne collecte aucune réponse : rien de ce que vous répondez n'est envoyé, aucune statistique n'est faite sur les résultats des visiteurs, et le site ne publie aucun sondage.{AUDIENCE_ACTIVE && <> Seule une <a href={lien('confidentialite/#mesure-audience')}>mesure d'audience anonyme</a> compte les visites et les tests commencés et terminés, sans jamais les publier.</>}</li>
       <li>Elle ne reformule pas : les questions sont posées telles qu'elles ont été validées, et les citations sont reprises mot pour mot.</li>
       <li>Elle ne classe pas les candidats ailleurs que dans votre résultat : partout ailleurs, l'ordre est alphabétique et le traitement identique.</li>
     </ul>

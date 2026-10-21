@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Icone from '../../components/Icone';
 import { introThemes } from '../../data/classe';
+import { AUDIENCE_ACTIVE } from '../../lib/config-audience';
 import { enjeuxParTheme, lien } from '../../lib/donnees';
 
 const deroule = [
@@ -19,7 +20,7 @@ const deroule = [
 
   <section class="mt-10 grid gap-5 sm:grid-cols-3" aria-label="Principes du mode classe" data-cascade>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucun résultat nominatif</h2><p class="mt-1 text-sm text-muted-foreground">Le test en mode classe n'affiche ni classement ni nom de candidat : seulement la répartition des positions, pour discuter des idées.</p></div>
-    <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucune collecte</h2><p class="mt-1 text-sm text-muted-foreground">Pas de compte, pas de code de classe, pas de tableau de bord : les réponses restent sur l'appareil de chaque élève.</p></div>
+    <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Aucune collecte des réponses</h2><p class="mt-1 text-sm text-muted-foreground">Pas de compte, pas de code de classe, pas de tableau de bord : les réponses restent sur l'appareil de chaque élève.{AUDIENCE_ACTIVE && " Seules les visites sont comptées, anonymement."}</p></div>
     <div class="brut-panel bg-card p-4"><h2 class="font-sans font-bold">Des arguments des deux côtés</h2><p class="mt-1 text-sm text-muted-foreground">Chaque fiche donne un contexte factuel et un argument pour chacune des deux options, de longueur comparable, sans nom de parti.</p></div>
   </section>
 

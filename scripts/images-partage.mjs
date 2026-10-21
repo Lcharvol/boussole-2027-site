@@ -43,7 +43,7 @@ function image(surtitre, titre, sousTitre) {
       'div',
       { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: C.jaune, border: `5px solid ${C.encre}`, boxShadow: `8px 8px 0 ${C.encre}`, padding: '16px 24px', fontSize: 25, fontWeight: 800 },
       h('div', {}, 'Proximité avec des programmes, pas une consigne de vote'),
-      h('div', { fontWeight: 400 }, 'Rien n’est collecté'),
+      h('div', { fontWeight: 400 }, 'Aucune réponse collectée'),
     ),
   );
 }

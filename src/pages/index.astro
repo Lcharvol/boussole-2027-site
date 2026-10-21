@@ -5,6 +5,7 @@ import Icone from '../components/Icone';
 import { candidats, dateFr, lien, listeEnjeux, meta, themes } from '../lib/donnees';
 import { presenter } from '../lib/tirage';
 import { calendrier } from '../data/calendrier';
+import { AUDIENCE_ACTIVE } from '../lib/config-audience';
 
 // Exemple de question, présentée exactement comme dans le test (formulation et côté tirés par une graine fixe).
 const exemple = presenter(listeEnjeux[0], themes, 1);
@@ -39,7 +40,9 @@ const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' 
   {
     icone: 'shield-check',
     titre: 'Rien ne quitte votre appareil',
-    texte: 'Le calcul se fait dans votre navigateur. Aucun compte, aucun cookie, aucun traceur, aucune statistique sur les réponses.',
+    texte: AUDIENCE_ACTIVE
+      ? "Le calcul se fait dans votre navigateur. Aucun compte, aucun cookie, aucune statistique sur les réponses : seule une mesure d'audience anonyme compte les visites."
+      : 'Le calcul se fait dans votre navigateur. Aucun compte, aucun cookie, aucun traceur, aucune statistique sur les réponses.',
   },
   {
     icone: 'download',
@@ -91,7 +94,7 @@ const differences: { titre: string; texte: string; icone: 'book-text' | 'gauge' 
         [String(meta.nb_enjeux), `dilemmes, sur ${Object.keys(themes).length} thèmes`],
         [String(meta.nb_candidats), 'candidats déclarés ou pressentis'],
         [String(meta.nb_positions), 'positions sourcées par une citation exacte'],
-        ['0', 'cookie, traceur ou donnée collectée'],
+        ['0', AUDIENCE_ACTIVE ? 'cookie, et aucune réponse collectée' : 'cookie, traceur ou donnée collectée'],
       ].map(([n, l]) => (
         <div class="brut-surface flex flex-col-reverse bg-card p-4">
           <dt class="mt-1 text-sm text-muted-foreground">{l}</dt>
