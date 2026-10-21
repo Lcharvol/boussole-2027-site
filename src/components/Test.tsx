@@ -132,8 +132,10 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
       premierRendu.current = false;
       return;
     }
+    // Le haut de l'étape (numéro de la question, thème) revient à l'écran, puis le focus va au titre.
+    const zone = titreRef.current?.closest('section');
+    zone?.scrollIntoView({ block: 'start', behavior: 'auto' });
     titreRef.current?.focus({ preventScroll: true });
-    titreRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
   }, [etape]);
 
   function choisirMode(m: Mode) {
@@ -193,7 +195,7 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
     if (courante < 0) return;
     const surTouche = (ev: KeyboardEvent) => {
       if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
-      const t = ev.target as HTMLElement | null;
+      const t = ev.target instanceof Element ? ev.target : null;
       if (t?.closest('textarea, select, [contenteditable="true"], input:not([type="radio"]):not([type="checkbox"])')) return;
       const q = file[courante];
       if (!q) return;
@@ -302,7 +304,7 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
     const valeur = v === undefined ? null : v === null ? 'passe' : String(k);
     const derniere = i === file.length - 1;
     return (
-      <section aria-labelledby="titre-etape">
+      <section aria-labelledby="titre-etape" className="scroll-mt-4">
         <p className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
           <span>
             Question {anciennes.length + i + 1}
@@ -394,7 +396,7 @@ export default function Test({ referentiel, candidats, base, classe = false }: P
     <section aria-labelledby="titre-etape">
       {raisonFin && mode === 'adaptatif' && (
         <p className="mb-4 text-sm text-muted-foreground">
-          Fin des questions du mode adaptatif ({nbTotal} posées) : {raisonFin}.
+          Fin des questions du mode adaptatif après {nbTotal} questions : {raisonFin}.
         </p>
       )}
       <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="text-3xl font-bold outline-none sm:text-4xl">
