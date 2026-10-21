@@ -30,7 +30,7 @@ function Barre({ score, marge }: { score: number; marge: number | null }) {
   return (
     <div className="brut-progress relative h-5 w-full" aria-hidden="true">
       <div className="h-full bg-primary" style={{ width: `${score}%` }} />
-      <div className="absolute inset-y-0 left-1/2 border-l-2 border-dashed border-muted-foreground/70" title="50 % : pas plus proche que le hasard" />
+      <div className="absolute -inset-y-0.5 left-1/2 w-0.5 bg-foreground/45" />
       {m > 0 && (
         <div className="absolute top-1/2 h-2.5 -translate-y-1/2 border-x-2 border-foreground" style={{ left: `${g}%`, width: `${d - g}%` }}>
           <div className="absolute top-1/2 h-0.5 w-full -translate-y-1/2 bg-foreground" />
@@ -137,10 +137,20 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
     }
   }
 
+  // Affiche (au besoin) la fiche détaillée d'un candidat et y amène l'écran.
+  function voirDetail(slug: string) {
+    if (!detail.includes(slug)) setDetail((d) => [...d, slug]);
+    setTimeout(() => {
+      const el = document.getElementById(`detail-${slug}`);
+      el?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      el?.focus({ preventScroll: true });
+    }, 60);
+  }
+
   const ligne = (r: ResultatCandidat, rang: number | null) => (
-    <li key={r.slug} className="brut-surface grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 bg-card p-3 sm:grid-cols-[2rem_auto_1fr_13rem] sm:items-center sm:gap-x-4">
-      <span className="hidden text-right font-serif text-xl font-bold sm:block">{rang ?? '—'}</span>
-      <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} />
+    <li key={r.slug} className="brut-surface grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 bg-card p-3 sm:grid-cols-[2rem_auto_1fr_14rem_auto] sm:items-center sm:gap-x-4">
+      <span className="hidden text-right font-serif text-xl font-bold text-muted-foreground sm:block">{rang ?? '—'}</span>
+      <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} eager={rang !== null && rang <= 10} />
       <div className="min-w-0">
         <p className="font-bold leading-tight">
           <span className="sm:hidden">{rang ? `${rang}. ` : ''}</span>
@@ -149,14 +159,12 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           </a>
         </p>
         <p className="text-sm text-muted-foreground">{r.parti}</p>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {rang !== null && peloton.has(r.nom) && res.peloton_de_tete.length > 1 && <Badge variant="secondary">Peloton de tête</Badge>}
-          {r.prioritaires_sans_donnee.length > 0 && (
-            <Badge variant="outline" className="h-auto whitespace-normal text-left normal-case">
-              Aucune position connue sur : {r.prioritaires_sans_donnee.map((t) => themes[t]).join(', ')}
-            </Badge>
-          )}
-        </div>
+        {r.prioritaires_sans_donnee.length > 0 && (
+          <p className="mt-1 text-xs font-semibold">
+            <span aria-hidden="true">⚠ </span>
+            Aucune position connue sur votre priorité : {r.prioritaires_sans_donnee.map((t) => themes[t]).join(', ')}
+          </p>
+        )}
       </div>
       <div className="col-span-2 sm:col-span-1">
         <p className="flex items-baseline justify-between text-sm">
@@ -171,6 +179,9 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           Proximité {r.score ?? 'non calculable'} pour cent{r.marge !== null ? `, plus ou moins ${r.marge} points` : ''}, position connue sur {Math.round(r.couverture * 100)} % de vos réponses.
         </p>
       </div>
+      <Button variant="outline" size="sm" className="col-span-2 justify-self-start sm:col-span-1" onClick={() => voirDetail(r.slug)}>
+        Détail<span className="sr-only"> pour {r.nom}</span>
+      </Button>
     </li>
   );
 
@@ -206,7 +217,7 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
       );
     };
     return (
-      <article key={slug} className="brut-panel bg-card p-4 sm:p-5" aria-labelledby={`d-${slug}`}>
+      <article key={slug} id={`detail-${slug}`} tabIndex={-1} className="brut-panel scroll-mt-6 bg-card p-4 outline-none sm:p-5" aria-labelledby={`d-${slug}`}>
         <header className="flex items-center gap-3">
           <PortraitMini slug={slug} nom={c.nom} photos={photos} base={base} className="w-14" />
           <div>
@@ -251,17 +262,17 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
   };
 
   const tous = [...res.classement, ...res.donnees_insuffisantes];
+  const pelotonListe = res.classement.filter((r) => peloton.has(r.nom));
+  const autres = res.classement.filter((r) => !peloton.has(r.nom));
+  const tete = res.classement.slice(0, 3);
 
   return (
     <div className="grid gap-10">
-      <section aria-labelledby="titre-resume" className="grid gap-4">
+      <section aria-labelledby="titre-resume" className="grid gap-5">
         <p className="brut-surface bg-primary px-4 py-3 font-semibold text-primary-foreground">
           Ce résultat mesure une proximité avec des programmes. Ce n'est pas une consigne de vote.
         </p>
-        <h2 id="titre-resume" className="sr-only">
-          Résumé
-        </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Mode {etat.mode} · {res.nb_reponses} réponse{res.nb_reponses > 1 ? 's' : ''} prise{res.nb_reponses > 1 ? 's' : ''} en compte
           {nbPasse > 0 && ` · ${nbPasse} question${nbPasse > 1 ? 's' : ''} passée${nbPasse > 1 ? 's' : ''}`}
           {prio.length > 0 && ` · priorités : ${prio.map(([t, v]) => `${themes[t]}${v === 3 ? ' (décisif)' : ''}`).join(', ')}`}
@@ -278,6 +289,41 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
             <AlertDescription>Vous avez passé toutes les questions : il n'y a rien à comparer.</AlertDescription>
           </Alert>
         )}
+        {tete.length > 0 && (
+          <div className="brut-panel bg-card p-5 sm:p-6">
+            <h2 id="titre-resume" className="text-2xl font-bold sm:text-3xl">
+              Les programmes les plus proches de vos réponses
+            </h2>
+            <ul className="mt-5 grid grid-cols-3 gap-3 sm:gap-6">
+              {tete.map((r, i) => (
+                <li key={r.slug} className="min-w-0">
+                  <a href={`#detail-${r.slug}`} onClick={(e) => (e.preventDefault(), voirDetail(r.slug))} className="group block">
+                    <PortraitMini slug={r.slug} nom={r.nom} photos={photos} base={base} className="w-full max-w-36" eager />
+                    <span className="mt-2 block text-sm leading-tight font-bold group-hover:underline sm:text-base">
+                      {i + 1}. {r.nom}
+                    </span>
+                    <span className="block text-xs text-muted-foreground sm:text-sm">{r.parti}</span>
+                    <span className="mt-1 block font-bold tabular-nums">
+                      {r.score} % <span className="text-sm font-semibold">± {r.marge}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-sm">
+              {res.peloton_de_tete.length > 1 ? (
+                <>
+                  <strong>
+                    {res.peloton_de_tete.length} candidats sont dans la marge d'incertitude du premier
+                  </strong>{' '}
+                  : leur ordre n'est pas significatif.{etat.mode !== 'long' && ' Le mode long resserre les marges.'}
+                </>
+              ) : (
+                <>Le premier se détache : aucun autre candidat n'est dans sa marge d'incertitude.</>
+              )}
+            </p>
+          </div>
+        )}
       </section>
 
       {res.classement.length > 0 && (
@@ -285,20 +331,49 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           <h2 id="titre-classement" className="text-3xl font-bold">
             Proximité avec chaque candidat
           </h2>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            50 % : pas plus proche que des réponses au hasard (trait pointillé). 100 % : mêmes réponses partout. La marge (±) contient {niveau} % des scores obtenus en
-            rééchantillonnant vos questions ; la couverture dit sur quelle part de vos réponses la position du candidat est connue.
-          </p>
-          {res.peloton_de_tete.length > 1 && (
-            <Alert role="note" className="mt-4">
-              <AlertTitle>Les {res.peloton_de_tete.length} premiers ne peuvent pas être départagés</AlertTitle>
-              <AlertDescription>
-                Leurs intervalles (score ± marge) recouvrent celui du premier : leur ordre n'est pas significatif.
-                {etat.mode !== 'long' && ' Le mode long resserre les marges.'}
-              </AlertDescription>
-            </Alert>
+          <details className="brut-surface mt-4 bg-card px-4 py-3 text-sm">
+            <summary className="cursor-pointer font-bold">Comment lire ce résultat</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[16rem_1fr] sm:items-center">
+              <div aria-hidden="true">
+                <Barre score={62} marge={12} />
+                <div className="mt-1 flex justify-between text-[0.7rem] text-muted-foreground tabular-nums">
+                  <span>0 %</span>
+                  <span>50 % (hasard)</span>
+                  <span>100 %</span>
+                </div>
+              </div>
+              <ul className="grid gap-1.5 text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">La barre</strong> : votre proximité avec le programme. 50 % (trait vertical) veut dire « pas plus proche que des réponses au hasard », 100 % « mêmes réponses partout ».
+                </li>
+                <li>
+                  <strong className="text-foreground">Le trait noir (±)</strong> : la marge d'incertitude. Elle contient {niveau} % des scores obtenus en rééchantillonnant vos questions.
+                </li>
+                <li>
+                  <strong className="text-foreground">La couverture</strong> : la part de vos réponses pour lesquelles la position du candidat est connue.
+                </li>
+              </ul>
+            </div>
+          </details>
+          {pelotonListe.length > 1 && (
+            <>
+              <h3 className="mt-8 font-sans text-lg font-bold">
+                Peloton de tête{' '}
+                <span className="text-sm font-semibold text-muted-foreground">
+                  · {pelotonListe.length} candidats, ordre non significatif
+                </span>
+              </h3>
+              <ol className="mt-3 grid gap-3">{pelotonListe.map((r) => ligne(r, res.classement.indexOf(r) + 1))}</ol>
+            </>
           )}
-          <ol className="mt-5 grid gap-3">{res.classement.map((r, i) => ligne(r, i + 1))}</ol>
+          {(pelotonListe.length > 1 ? autres : res.classement).length > 0 && (
+            <>
+              {pelotonListe.length > 1 && <h3 className="mt-8 font-sans text-lg font-bold">Autres candidats</h3>}
+              <ol className="mt-3 grid gap-3" start={pelotonListe.length > 1 ? pelotonListe.length + 1 : 1}>
+                {(pelotonListe.length > 1 ? autres : res.classement).map((r) => ligne(r, res.classement.indexOf(r) + 1))}
+              </ol>
+            </>
+          )}
         </section>
       )}
 

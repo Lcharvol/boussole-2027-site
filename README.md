@@ -28,6 +28,7 @@ Le résultat mesure une proximité avec des programmes, pas une consigne de vote
 - **[Astro](https://astro.build) + TypeScript**, site entièrement statique. Les pages de contenu sont rendues au build, sans JavaScript.
 - **Îlots React** pour ce qui doit tourner chez le visiteur : le test (`src/components/Test.tsx`), le résultat (`Resultat.tsx`), le comparateur (`Comparateur.tsx`) et la carte du mode classe (`CarteClasse.tsx`).
 - **Interface : [Brut/UI](https://www.brut-ui.site/)** (registre shadcn, Base UI, Tailwind CSS v4), palette Paper. Les composants installés sont dans `src/components/ui/` et la feuille de style du thème dans `src/components/styles/brutalist.css`. Brut/UI n'ayant pas de thème sombre, il est défini dans `src/styles/global.css`.
+- **Thème clair par défaut**, quel que soit le réglage du système ; le thème sombre s'active avec le bouton de l'en-tête (choix gardé dans le `localStorage`). `?theme=sombre` dans l'adresse force le thème sombre pour la page affichée, sans rien mémoriser : c'est ce qu'utilise le test Lighthouse du thème sombre.
 - **Polices** Inter et Source Serif 4 servies par le site (aucune ressource tierce).
 
 ```

@@ -1,7 +1,7 @@
 // Questionnaire (îlot React). Tout se passe dans le navigateur : rien n'est envoyé ni enregistré.
 // À la fin, les réponses sont encodées dans le fragment de l'URL de la page de résultat (#…),
 // que le navigateur ne transmet jamais au serveur.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress, ProgressLabel } from '@/components/ui/progress';
@@ -100,6 +100,18 @@ export default function Test({ questions, themes, echelle, version, base, classe
   const themesRepondus = ordreT.filter((t) =>
     questions.some((q) => q.theme === t && (reponses[q.id] !== undefined || aPoser.some((a) => a.id === q.id))),
   );
+  const numero = (qid: string) => aPoser.findIndex((q) => q.id === qid) + 1;
+  const pourcent = aPoser.length ? Math.round((100 * repondues) / aPoser.length) : 0;
+
+  // Après un clic sur une réponse, amène la question suivante sans réponse à l'écran (pas au clavier :
+  // les flèches changent la réponse dans le groupe, on ne déplace donc rien).
+  function suivanteApresClic(qid: string, liste: Question[]) {
+    const i = liste.findIndex((q) => q.id === qid);
+    const prochaine = liste.slice(i + 1).find((q) => reponses[q.id] === undefined);
+    const cible = document.getElementById(prochaine ? `carte-${prochaine.id}` : 'barre-test');
+    const doux = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => cible?.scrollIntoView({ behavior: doux ? 'smooth' : 'auto', block: prochaine ? 'center' : 'end' }), 180);
+  }
 
   if (etape.type === 'mode') {
     return (
@@ -110,35 +122,91 @@ export default function Test({ questions, themes, echelle, version, base, classe
         <p className="mt-2 text-muted-foreground">Vous pourrez passer au mode supérieur à la fin, sans recommencer.</p>
         <ul className="mt-6 grid gap-5 md:grid-cols-3">
           {MODES.map((m) => (
-            <li key={m.id} className="brut-panel flex flex-col bg-card p-5">
-              <h3 className="font-serif text-2xl font-bold">{m.titre}</h3>
-              <p className="mt-1 text-sm font-semibold">
-                {NB[m.id]} questions · {m.duree}
-              </p>
-              <p className="mt-3 flex-1 text-sm text-muted-foreground">{m.fiabilite}</p>
-              <Button className="mt-5 h-11 w-full text-base" variant={m.id === 'moyen' ? 'default' : 'outline'} onClick={() => choisirMode(m.id)}>
-                Commencer en mode {m.titre.toLowerCase()}
-              </Button>
+            <li key={m.id} className="flex">
+              <button
+                type="button"
+                onClick={() => choisirMode(m.id)}
+                className={`brut-control brut-focus group flex w-full flex-col p-5 text-left ${m.id === 'moyen' ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
+              >
+                <span className="flex w-full items-start justify-between gap-3">
+                  <span className="font-serif text-3xl font-bold">{m.titre}</span>
+                  {m.id === 'moyen' && <span className="brut-chip bg-card px-2 py-0.5 text-[0.65rem] text-foreground">Recommandé</span>}
+                </span>
+                <span className="mt-2 text-sm font-bold">
+                  {NB[m.id]} questions · {m.duree}
+                </span>
+                <span className={`mt-3 flex-1 text-sm font-normal ${m.id === 'moyen' ? '' : 'text-muted-foreground'}`}>{m.fiabilite}</span>
+                <span className="mt-5 inline-flex items-center gap-1 text-base font-bold underline decoration-2 underline-offset-4">
+                  Commencer <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
+                </span>
+              </button>
             </li>
           ))}
         </ul>
         <p className="mt-6 text-sm text-muted-foreground">
-          Les modes courts gardent, dans chaque thème, les questions qui départagent le plus les candidats. Sans préférence, le mode moyen est un bon choix.
+          Les modes courts gardent, dans chaque thème, les questions qui départagent le plus les candidats.
         </p>
       </section>
     );
   }
 
-  const progression = (
-    <Progress value={aPoser.length ? Math.round((100 * repondues) / aPoser.length) : 0} className="mb-6">
-      <ProgressLabel>
-        Mode {mode}
-        {repriseDe && ` (suite du mode ${repriseDe})`}
-      </ProgressLabel>
-      <span className="ml-auto text-sm text-muted-foreground tabular-nums">
-        {repondues} / {aPoser.length} réponses
-      </span>
-    </Progress>
+  // Fil des étapes : un bouton par thème, puis les priorités.
+  const fil = (
+    <nav aria-label="Étapes du test" className="relative -mx-4 mb-6 overflow-x-auto px-4 pb-2">
+      <ol className="flex min-w-max gap-2">
+        {etapesThemes.map((e, i) => {
+          const faites = e.questions.filter((q) => reponses[q.id] !== undefined).length;
+          const courant = etape.type === 'theme' && etape.i === i;
+          const complet = faites === e.questions.length;
+          return (
+            <li key={e.theme}>
+              <button
+                type="button"
+                onClick={() => setEtape({ type: 'theme', i })}
+                aria-current={courant ? 'step' : undefined}
+                className={`brut-focus relative flex h-9 items-center gap-1.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-border px-2.5 text-xs font-bold whitespace-nowrap ${courant ? 'bg-foreground text-background' : complet ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'}`}
+              >
+                {complet && !courant && <span aria-hidden="true">✓</span>}
+                {themes[e.theme].split(/[ ,]/)[0]}
+                <span className="sr-only">
+                  {' '}
+                  : {faites} réponse{faites > 1 ? 's' : ''} sur {e.questions.length}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+        <li>
+          <button
+            type="button"
+            onClick={() => setEtape({ type: 'priorites' })}
+            aria-current={etape.type === 'priorites' ? 'step' : undefined}
+            className={`brut-focus flex h-9 items-center rounded-[var(--radius)] border-[length:var(--brut-border)] border-border px-2.5 text-xs font-bold ${etape.type === 'priorites' ? 'bg-foreground text-background' : 'bg-card hover:bg-muted'}`}
+          >
+            Priorités
+          </button>
+        </li>
+      </ol>
+    </nav>
+  );
+
+  // Barre collée en bas de l'écran : progression et navigation toujours à portée de main.
+  const barre = (precedent: ReactNode, suivant: ReactNode) => (
+    <div id="barre-test" className="sticky bottom-0 z-20 -mx-4 mt-8 border-t-[length:var(--brut-border)] border-border bg-card px-4 py-3 shadow-[0_-6px_16px_rgba(0,0,0,0.08)]">
+      <Progress value={pourcent} className="mb-3 gap-1.5">
+        <ProgressLabel className="text-xs">
+          Mode {mode}
+          {repriseDe && ` (suite du mode ${repriseDe})`}
+        </ProgressLabel>
+        <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+          {repondues} / {aPoser.length} réponses
+        </span>
+      </Progress>
+      <div className="flex items-center justify-between gap-3">
+        {precedent}
+        {suivant}
+      </div>
+    </div>
   );
 
   if (etape.type === 'theme') {
@@ -158,11 +226,11 @@ export default function Test({ questions, themes, echelle, version, base, classe
     const dernier = etape.i === etapesThemes.length - 1;
     return (
       <section aria-labelledby="titre-etape">
-        {progression}
+        {fil}
         <p className="text-sm font-semibold text-muted-foreground">
           Thème {etape.i + 1} sur {etapesThemes.length}
         </p>
-        <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="mt-1 scroll-mt-4 text-3xl font-bold outline-none">
+        <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="mt-1 scroll-mt-4 text-3xl font-bold outline-none sm:text-4xl">
           {themes[e.theme]}
         </h2>
         <ol className="mt-6 grid gap-6">
@@ -170,20 +238,36 @@ export default function Test({ questions, themes, echelle, version, base, classe
             const v = reponses[q.id];
             const valeur = v === undefined ? null : v === null ? 'passe' : String(v);
             return (
-              <li key={q.id} className="brut-panel bg-card p-4 sm:p-5">
-                <p id={`q-${q.id}`} className="text-lg leading-snug font-semibold text-pretty">
+              <li key={q.id} id={`carte-${q.id}`} className={`brut-panel scroll-mt-24 bg-card p-4 transition-colors sm:p-6 ${v !== undefined ? 'border-foreground' : ''}`}>
+                <p className="flex items-center justify-between text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                  <span>
+                    Question {numero(q.id)} / {aPoser.length}
+                  </span>
+                  {v !== undefined && (
+                    <span className="normal-case">
+                      <span aria-hidden="true">✓ </span>
+                      {v === null ? 'Passée' : 'Répondu'}
+                    </span>
+                  )}
+                </p>
+                <p id={`q-${q.id}`} className="mt-2 font-serif text-xl leading-snug font-semibold text-pretty sm:text-2xl">
                   {q.texte}
                 </p>
                 <RadioGroup
                   aria-labelledby={`q-${q.id}`}
                   value={valeur}
                   onValueChange={(nv) => setReponses((r) => ({ ...r, [q.id]: nv === 'passe' ? null : Number(nv) }))}
-                  className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-6"
+                  className="mt-5 grid gap-2 sm:grid-cols-5"
                 >
                   {OPTIONS.map((o) => (
                     <label
                       key={o.v}
-                      className="brut-questionnaire-choice flex min-h-11 cursor-pointer items-center gap-2.5 px-3 py-2 text-sm font-medium has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground hover:bg-muted"
+                      onPointerUp={() => suivanteApresClic(q.id, e.questions)}
+                      className={
+                        o.v === 'passe'
+                          ? 'brut-focus flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--radius)] border-[length:var(--brut-border)] border-dashed border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted has-[[data-checked]]:border-solid has-[[data-checked]]:bg-muted has-[[data-checked]]:text-foreground sm:col-span-5 sm:justify-self-start'
+                          : 'brut-questionnaire-choice flex min-h-12 cursor-pointer items-center gap-2.5 bg-background px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted has-[[data-checked]]:bg-primary has-[[data-checked]]:text-primary-foreground sm:flex-col sm:justify-center sm:gap-2 sm:py-3 sm:text-center'
+                      }
                     >
                       <RadioGroupItem value={o.v} />
                       <span>{o.v === 'passe' ? 'Je passe' : echelle[o.cle]}</span>
@@ -195,14 +279,20 @@ export default function Test({ questions, themes, echelle, version, base, classe
           })}
         </ol>
         <p className="mt-4 text-sm text-muted-foreground">Une question laissée sans réponse est comptée comme « je passe ».</p>
-        <div className="mt-6 flex flex-wrap justify-between gap-4">
-          <Button variant="outline" className="h-11 px-5" onClick={() => setEtape(etape.i === 0 ? (repriseDe ? { type: 'theme', i: 0 } : { type: 'mode' }) : { type: 'theme', i: etape.i - 1 })} disabled={etape.i === 0 && !!repriseDe}>
-            ← {etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}
-          </Button>
+        {barre(
+          <Button
+            variant="outline"
+            className="h-11 px-4"
+            onClick={() => setEtape(etape.i === 0 ? (repriseDe ? { type: 'theme', i: 0 } : { type: 'mode' }) : { type: 'theme', i: etape.i - 1 })}
+            disabled={etape.i === 0 && !!repriseDe}
+          >
+            ← <span className="hidden sm:inline">{etape.i === 0 ? 'Changer de mode' : 'Thème précédent'}</span>
+            <span className="sm:hidden">Retour</span>
+          </Button>,
           <Button className="h-11 px-5" onClick={() => setEtape(dernier ? { type: 'priorites' } : { type: 'theme', i: etape.i + 1 })}>
             {dernier ? 'Mes priorités →' : 'Thème suivant →'}
-          </Button>
-        </div>
+          </Button>,
+        )}
       </section>
     );
   }
@@ -210,8 +300,8 @@ export default function Test({ questions, themes, echelle, version, base, classe
   // Priorités
   return (
     <section aria-labelledby="titre-etape">
-      {progression}
-      <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="text-3xl font-bold outline-none">
+      {fil}
+      <h2 id="titre-etape" ref={titreRef} tabIndex={-1} className="text-3xl font-bold outline-none sm:text-4xl">
         Quels thèmes comptent le plus pour vous ?
       </h2>
       <p className="mt-2 max-w-2xl text-muted-foreground">
@@ -227,7 +317,7 @@ export default function Test({ questions, themes, echelle, version, base, classe
             const choisi = (importance[t] ?? 1) > 1;
             const bloque = !choisi && nbPrio >= MAX_PRIORITES;
             return (
-              <li key={t} className="brut-surface bg-card p-3">
+              <li key={t} className={`brut-surface p-3 transition-colors ${choisi ? 'bg-primary/25' : 'bg-card'} ${bloque ? 'opacity-60' : ''}`}>
                 <label className="flex cursor-pointer items-center gap-3 font-semibold">
                   <Checkbox
                     checked={choisi}
@@ -254,17 +344,16 @@ export default function Test({ questions, themes, echelle, version, base, classe
           })}
         </ul>
       </fieldset>
-      <div className="mt-8 flex flex-wrap justify-between gap-4">
-        <Button variant="outline" className="h-11 px-5" onClick={() => setEtape({ type: 'theme', i: Math.max(0, etapesThemes.length - 1) })}>
-          ← Revenir aux questions
-        </Button>
-        <Button className="h-12 px-6 text-base" onClick={terminer}>
-          {classe ? 'Voir la carte des positions' : 'Voir mon résultat'}
-        </Button>
-      </div>
-      <p className="mt-6 text-sm text-muted-foreground">
-        Le calcul se fait dans votre navigateur. Vos réponses ne sont ni envoyées, ni enregistrées.
-      </p>
+      <p className="mt-6 text-sm text-muted-foreground">Le calcul se fait dans votre navigateur. Vos réponses ne sont ni envoyées, ni enregistrées.</p>
+      {barre(
+        <Button variant="outline" className="h-11 px-4" onClick={() => setEtape({ type: 'theme', i: Math.max(0, etapesThemes.length - 1) })}>
+          ← <span className="hidden sm:inline">Revenir aux questions</span>
+          <span className="sm:hidden">Retour</span>
+        </Button>,
+        <Button className="h-11 px-5 text-base" onClick={terminer}>
+          {classe ? 'Voir la carte →' : 'Voir mon résultat →'}
+        </Button>,
+      )}
     </section>
   );
 }
