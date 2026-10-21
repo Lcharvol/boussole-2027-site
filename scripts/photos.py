@@ -37,7 +37,8 @@ def api(url, **params):
 
 def texte(m, cle):
     brut = m.get(cle, {}).get("value", "")
-    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", brut))).strip()
+    t = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", brut))).strip()
+    return re.sub(r"\(\s+", "(", re.sub(r"\s+\)", ")", t))
 
 
 def main():
