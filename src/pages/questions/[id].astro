@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Portrait from '../../components/Portrait.astro';
 import Position from '../../components/Position.astro';
+import AxeQuestion from '../../components/graphiques/AxeQuestion';
 import { candidats, lien, listeQuestions, questions, themes } from '../../lib/donnees';
 import { VALEURS, type Question } from '../../lib/types';
 
@@ -30,6 +31,10 @@ const groupes = [
   <p class="mt-6 brut-chip inline-block bg-secondary px-2 py-1 text-xs text-secondary-foreground">{themes[q.theme]} · mode {q.niveau}</p>
   <h1 class="entree mt-3 text-3xl font-bold leading-tight sm:text-4xl">« {q.texte} »</h1>
   <p class="mt-4 text-sm text-muted-foreground">Affirmation reprise telle qu'elle est posée dans le test. Les positions sont classées de « tout à fait d'accord » à « pas du tout d'accord », puis par ordre alphabétique.</p>
+
+  <div class="mt-8">
+    <AxeQuestion id={`graph-axe-${q.id}`} echelle={questions.echelle} candidats={candidats.map((c) => ({ slug: c.slug, nom: c.nom, valeur: c.positions[q.id]?.valeur ?? null }))} base={lien()} />
+  </div>
 
   <nav aria-label="Aller à un groupe" class="mt-6">
     <ul class="flex flex-wrap gap-2 text-sm">

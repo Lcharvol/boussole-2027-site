@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Icone from '../../components/Icone';
 import Portrait from '../../components/Portrait.astro';
 import Position from '../../components/Position.astro';
+import Couverture from '../../components/graphiques/Couverture';
 import { candidats, candidatsRetires, dateFr, lien, listeQuestions, positionsConnues, questionsParTheme } from '../../lib/donnees';
 import { CONFIANCE } from '../../lib/types';
 import type { Candidat } from '../../lib/types';
@@ -42,6 +43,16 @@ const relues = listeQuestions.filter((q) => c.positions[q.id]?.valeur != null &&
       {c.notes && <p class="mt-4 text-sm leading-relaxed text-muted-foreground">{c.notes}</p>}
     </div>
   </header>
+
+  <div class="mt-8">
+    <Couverture
+      total={listeQuestions.length}
+      programme={parConfiance.find((p) => p.k === 'programme')!.n}
+      declaration={parConfiance.find((p) => p.k === 'declaration')!.n}
+      deduite={parConfiance.find((p) => p.k === 'deduite')!.n}
+      relues={relues}
+    />
+  </div>
 
   <nav aria-label="Thèmes" class="mt-10">
     <ul class="flex flex-wrap gap-2 text-sm">

@@ -124,6 +124,13 @@
   .prose-b th, .prose-b td { border: 1px solid var(--border); padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
   .prose-b th { background: var(--muted); }
   .prose-b blockquote { border-left: 4px solid var(--primary); padding-left: 1em; }
+  /* Graphiques insérés dans un texte long : on neutralise les styles de prose. */
+  .prose-b .not-prose ul, .prose-b .not-prose ol { list-style: none; padding-left: 0; }
+  .prose-b .not-prose li + li { margin-top: 0; }
+  .prose-b .not-prose h3 { margin-top: 0; font-size: 1.125rem; }
+  .prose-b .not-prose table { display: table; font-size: inherit; }
+  .prose-b .not-prose th, .prose-b .not-prose td { border: 0; border-bottom: 1px solid color-mix(in oklab, var(--border) 40%, transparent); padding: 0.25rem 0.5rem; }
+  .prose-b .not-prose th { background: none; }
 
   .lien { text-decoration: underline; text-decoration-thickness: 2px; }
   .lien:hover { background: var(--primary); color: var(--primary-foreground); }
@@ -224,4 +231,37 @@ html:has(#barre-test) { scroll-padding-bottom: 10rem; }
   *, *::before, *::after { transition: none !important; animation: none !important; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; word-break: break-all; }
   li, article, blockquote { break-inside: avoid; }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Graphiques. Neutralité : aucune couleur de parti ; tous les candidats ont la même couleur
+   (graphite), seule la personne (« Vous ») est mise en avant, en jaune cerné d'encre et étiquetée.
+   Échelles à une seule teinte (graphite chaud), validées avec le script du skill dataviz.
+   --------------------------------------------------------------------------------------------- */
+:root {
+  --viz-marque: #554b42;
+  --viz-anneau: #ffffff;
+  --viz-vous: #f4bb00;
+  --viz-grille: #e7e2d9;
+  --viz-axe: #b9b0a3;
+  --viz-bande: color-mix(in oklab, #f4bb00 22%, transparent);
+  /* Échelle resserrée : l'encre du texte garde au moins 5:1 de contraste sur toute l'échelle. */
+  --viz-seq-min: #f7f3ec;
+  --viz-seq-max: #96826c;
+  --viz-ord-1: #9e8f7f;
+  --viz-ord-2: #6f6151;
+  --viz-ord-3: #423527;
+}
+:root[data-theme="dark"] {
+  --viz-marque: #beb6a9;
+  --viz-anneau: #211c17;
+  --viz-vous: #f8c20d;
+  --viz-grille: #3a332b;
+  --viz-axe: #5f564b;
+  --viz-bande: color-mix(in oklab, #f8c20d 20%, transparent);
+  --viz-seq-min: #282017;
+  --viz-seq-max: #75624d;
+  --viz-ord-1: #6f6151;
+  --viz-ord-2: #a29282;
+  --viz-ord-3: #decebc;
 }

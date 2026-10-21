@@ -54,6 +54,10 @@ src/
   data/photos.json       photos retenues : fichier, auteur, licence, lien
 ```
 
+### Graphiques
+
+Sept graphiques (`src/components/graphiques/`), sans bibliothèque : HTML positionné en pourcentages (lisible sur mobile) ou SVG léger pour la carte. Rendus au build sur les pages statiques (aucun JavaScript), dans le navigateur sur le résultat et le comparateur. Neutralité : aucune couleur de parti, même couleur (graphite) et même traitement pour tous les candidats, seul « Vous » est mis en avant ; pas de radar ; aucun graphique de sondage ni de résultats agrégés des visiteurs ; ordres de tri écrits sous chaque graphique. Accessibilité : titre, description, version tableau et info-bulles pour chacun ; couleurs dans `src/styles/global.css` (`--viz-*`), validées avec le script du skill dataviz ; texte des cases de la grille à 5:1 au moins. La carte « vous et les candidats » utilise une ACP calculée au build (`src/lib/acp.ts`, même premier axe que `audit_biais.py`) ; les graphiques de la méthode lisent le rapport d'audit (`src/lib/audit.ts`).
+
 ### Performance
 
 Portraits WebP aux tailles affichées (`srcset`), page de résultat calculée à partir de `donnees/calcul.json` (4 ko compressés, préchargé) puis citations chargées ensuite, place réservée pendant le calcul (pas de saut de mise en page), îlots d'icônes hydratés au repos ou à l'affichage. Le serveur de test compresse en gzip comme GitHub Pages ; Lighthouse mobile ≈ 95 sur les pages de contenu.

@@ -81,9 +81,9 @@ const actif = (href: string) => chemin.startsWith(lien(href));
     <a href="#contenu" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 brut-control bg-primary text-primary-foreground px-4 py-2">Aller au contenu</a>
     <header class="border-b-[length:var(--brut-border)] border-border bg-card">
       <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-        <a href={lien()} class="flex items-center gap-2 font-serif text-lg font-bold leading-tight" aria-label="Boussole 2027, accueil">
+        <a href={lien()} class="flex items-center gap-2 font-serif text-lg font-bold leading-tight">
           <svg aria-hidden="true" viewBox="0 0 32 32" class="size-8 shrink-0"><circle cx="16" cy="16" r="14" fill="var(--card)" stroke="currentColor" stroke-width="2.5"></circle><path class="aiguille" d="M16 5 L20 16 L16 27 L12 16 Z" fill="var(--primary)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path><circle cx="16" cy="16" r="2" fill="currentColor"></circle></svg>
-          <span>Boussole <span class="whitespace-nowrap">2027</span></span>
+          <span>Boussole <span class="whitespace-nowrap">2027</span><span class="sr-only">, accueil</span></span>
         </a>
         <nav aria-label="Navigation principale" class="ml-auto hidden lg:block">
           <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">

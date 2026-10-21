@@ -9,6 +9,10 @@ import { decoder, encoder, type Etat } from '@/lib/partage';
 import { calculer, candidatsActifs, NIVEAU, type CandidatCalcul, type Resultat as Res, type ResultatCandidat } from '@/lib/score';
 import { CONFIANCE, NIVEAUX_DU_MODE, type Candidat, type Mode, type Photos, type Question } from '@/lib/types';
 import Icone from './Icone';
+import CarteAxes from './graphiques/CarteAxes';
+import GrilleThemes from './graphiques/GrilleThemes';
+import Proximite from './graphiques/Proximite';
+import type { Carte } from '@/lib/acp';
 import { PortraitMini } from './Portrait';
 
 interface Props {
@@ -18,6 +22,7 @@ interface Props {
   version: string;
   base: string;
   photos: Photos;
+  carte: Carte;
 }
 
 const NB: Record<Mode, number> = { rapide: 8, moyen: 24, long: 40 };
@@ -63,7 +68,7 @@ function Compteur({ valeur }: { valeur: number }) {
   return <>{v}</>;
 }
 
-export default function Resultat({ questions, themes, echelle, version, base, photos }: Props) {
+export default function Resultat({ questions, themes, echelle, version, base, photos, carte }: Props) {
   const ordreQ = useMemo(() => questions.map((q) => q.id), [questions]);
   const ordreT = useMemo(() => Object.keys(themes), [themes]);
   const parId = useMemo(() => Object.fromEntries(questions.map((q) => [q.id, q])), [questions]);
@@ -386,6 +391,22 @@ export default function Resultat({ questions, themes, echelle, version, base, ph
           </div>
         )}
       </section>
+
+      {res.classement.length > 0 && (
+        <section aria-labelledby="titre-graphiques" className="grid gap-6">
+          <h2 id="titre-graphiques" className="text-3xl font-bold">
+            En un coup d'œil
+          </h2>
+          <Proximite classement={res.classement} peloton={peloton} niveau={niveau} />
+          <CarteAxes
+            carte={carte}
+            noms={Object.fromEntries(candidats.map((c) => [c.slug, c.nom]))}
+            textes={Object.fromEntries(questions.map((q) => [q.id, q.texte]))}
+            reponses={etat.reponses}
+          />
+          <GrilleThemes candidats={res.classement.slice(0, Math.min(8, Math.max(5, res.peloton_de_tete.length)))} themes={themes} />
+        </section>
+      )}
 
       {res.classement.length > 0 && (
         <section aria-labelledby="titre-classement">
