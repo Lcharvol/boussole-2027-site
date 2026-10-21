@@ -133,6 +133,7 @@ export function calculer(
   const qids = Object.keys(reponses).sort();
 
   const resultats: ResultatCandidat[] = [];
+  const brut = new Map<string, number | null>(); // score non arrondi par slug : sert seulement à trier
   for (const c of candidats) {
     let totalP = 0.0;
     let totalW = 0.0;
@@ -182,6 +183,7 @@ export function calculer(
     const couvertes = qids.filter((qid) => valeurDe(c, qid) !== null).length;
     const themesRepondus = new Set(qids.map((qid) => themeDe[qid]));
     const prioritaires = [...themesRepondus].filter((t) => imp(t) > 1 && !parTheme.has(t)).sort();
+    brut.set(c.slug, totalW ? pourcentage(totalP / (totalW + totalWInconnues)) : null);
     resultats.push({
       slug: c.slug,
       nom: c.nom,
@@ -200,7 +202,8 @@ export function calculer(
 
   const fiables = resultats.filter((r) => r.score !== null && r.couverture >= COUVERTURE_MIN);
   const peuFiables = resultats.filter((r) => !fiables.includes(r));
-  fiables.sort((a, b) => b.score! - a.score! || b.couverture - a.couverture);
+  // Tri sur le score non arrondi : à score affiché égal, l'ordre suit le score exact, pas la couverture.
+  fiables.sort((a, b) => brut.get(b.slug)! - brut.get(a.slug)!);
   peuFiables.sort((a, b) => (b.score || 0) - (a.score || 0));
   let peloton: string[] = [];
   if (fiables.length) {
